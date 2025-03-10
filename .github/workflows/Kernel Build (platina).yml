@@ -213,7 +213,7 @@ jobs:
         message: |
           <b>${{ steps.workspace.outputs.build_title }}</b>
           <b>✅Kernel successfully build</b> 
-          <b>⏳Build Time<b> ${{ steps.build.outputs.elapsed_time % 60 }} minutes and ${{ steps.build.outputs.elapsed_time % 60 }} seconds.
+          <b>⏳Build Time<b> ${{ steps.build.outputs.elapsed_time }} seconds.
           <b>📱Device<b> Xiaomi Redmi 9C (Blossom)
           <b>KernelSU</b>: ${{ steps.workspace.outputs.kernelsu }}
           
