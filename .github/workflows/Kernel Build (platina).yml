@@ -7,20 +7,16 @@ on:
         description: 'Custom Build Title'
         required: false
       KERNEL_TREE:
-        description: 'Kernel Tree'
-        default: 'https://github.com/itisFarzin/kernel_xiaomi_sdm660'
+        description: 'Kernel Source'
         required: true
       KERNEL_TREE_BRANCH:
-        description: 'Kernel Tree Branch'
-        default: 'SW-3.2.7-KSU'
+        description: 'Kernel Source Branch'
         required: true
       CODENAME:
-        description: 'Phone Codename'
-        default: 'platina'
+        description: 'Codename'
         required: true
       ANYKERNEL_URL:
         description: 'AnyKernel Url (leave blank if you dont want AnyKernel)'
-        default: 'https://github.com/itisFarzin-Phone/AnyKernel3'
         required: false
       ANYKERNEL_BRANCH:
         description: 'AnyKernel Branch (defaults to codename)'
@@ -28,14 +24,8 @@ on:
       CLANG_VERSION:
         type: choice
         description: 'Clang Version'
-        default: 'clang-r510928'
         options: 
-        - 'clang-3289846'
-        - 'clang-r475365b'
-        - 'clang-r487747c'
-        - 'clang-r498229b'
-        - 'clang-r510928'
-        - 'clang-r522817'
+        - 'clang-383902'
       SEND_NOTIFICATION:
         description: 'Send Notification'
         type: boolean
@@ -83,9 +73,9 @@ jobs:
     - name: Prepare the build environment
       run: |
         sudo apt-get install flex libncurses5
-        git clone https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 -b android-msm-redbull-4.19-android14 --depth=1
-        git clone https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9 -b android-msm-redbull-4.19-android14 --depth=1
-        wget https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/tags/android-15.0.0_r5/${{ github.event.inputs.CLANG_VERSION }}.tar.gz -O clang.tar.gz
+        git clone https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 -b android11-release --depth=1
+        git clone https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9 -b android11-release --depth=1
+        wget https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/tags/android11-release/${{ github.event.inputs.CLANG_VERSION }}.tar.gz -O clang.tar.gz
         mkdir clang
         tar -xf clang.tar.gz -C clang
         echo "tools-folder=$(pwd)" >> $GITHUB_OUTPUT
