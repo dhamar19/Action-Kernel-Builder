@@ -134,7 +134,7 @@ jobs:
           cp -f Image AnyKernel3
           echo "Warning: Don't forget about dtb."
         fi
-        name=FulmenKernel-${{ github.event.inputs.CODENAME }}${{ fromJSON('["", "-KSU"]')[fromJSON(github.event.inputs.ENABLE_KERNELSU)] }}-${{date}}.zip
+        name=FulmenKernel-${{ github.event.inputs.CODENAME }}${{ fromJSON('["", "-KSU"]')[fromJSON(github.event.inputs.ENABLE_KERNELSU)] }}.zip
         cd AnyKernel3
         zip -q -r $name *
         mv $name ../
@@ -213,7 +213,7 @@ jobs:
         message: |
           <b>${{ steps.workspace.outputs.build_title }}</b>
           <b>✅Kernel successfully build</b> 
-          <b>⏳Build Time<b> ${{ steps.build.outputs.elapsed_time / 60 }} minutes and ${{ steps.build.outputs.elapsed_time % 60 }} seconds.
+          <b>⏳Build Time<b> ${{ steps.build.outputs.elapsed_time % 60 }} minutes and ${{ steps.build.outputs.elapsed_time % 60 }} seconds.
           <b>📱Device<b> Xiaomi Redmi 9C (Blossom)
           <b>KernelSU</b>: ${{ steps.workspace.outputs.kernelsu }}
           
