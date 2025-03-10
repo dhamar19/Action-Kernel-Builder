@@ -1,13 +1,15 @@
-name: Kernel Build (platina)
+name: Kernel Build
 
 on:
   workflow_dispatch:
     inputs:
       BUILD_TITLE:
         description: 'Custom Build Title'
+        default: Fulmen Kernel Build
         required: false
       KERNEL_TREE:
         description: 'Kernel Source'
+        default: https://github.com/Dhamararf/android_kernel_mediatek_mt6765g.git
         required: true
       KERNEL_TREE_BRANCH:
         description: 'Kernel Source Branch'
@@ -16,7 +18,8 @@ on:
         description: 'Codename'
         required: true
       ANYKERNEL_URL:
-        description: 'AnyKernel Url (leave blank if you dont want AnyKernel)'
+        description: 'AnyKernel Url'
+        default: https://github.com/Dhamararf/AnyKernel3.git
         required: false
       ANYKERNEL_BRANCH:
         description: 'AnyKernel Branch (defaults to codename)'
@@ -213,8 +216,8 @@ jobs:
         message: |
           <b>${{ steps.workspace.outputs.build_title }}</b>
           <b>✅Kernel successfully build</b> 
-          <b>⏳Build Time<b> ${{ steps.build.outputs.elapsed_time }} seconds.
-          <b>📱Device<b> Xiaomi Redmi 9C (Blossom)
+          <b>⏳Build Time</b> ${{ steps.build.outputs.elapsed_time }} seconds.
+          <b>📱Device</b> Xiaomi Redmi 9C (Blossom)
           <b>KernelSU</b>: ${{ steps.workspace.outputs.kernelsu }}
           
           <b>Kernel tree</b>: ${{ github.event.inputs.KERNEL_TREE }}/tree/${{ github.event.inputs.KERNEL_TREE_BRANCH }}
