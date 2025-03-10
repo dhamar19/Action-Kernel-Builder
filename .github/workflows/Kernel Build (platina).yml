@@ -49,7 +49,6 @@ jobs:
         echo "Kernel Tree: ${{ github.event.inputs.KERNEL_TREE }}/tree/${{ github.event.inputs.KERNEL_TREE_BRANCH }}"
         echo "Codename: ${{ github.event.inputs.CODENAME }}"
         echo "AnyKernel Url: ${{ github.event.inputs.ANYKERNEL_URL }}/tree/${{ github.event.inputs.ANYKERNEL_BRANCH }}"
-        echo "Clang Version: ${{ github.event.inputs.CLANG_VERSION }}"
         echo "Send Notification: ${{ fromJSON('["No", "Yes"]')[fromJSON(github.event.inputs.ENABLE_KERNELSU)] }}
         echo "KernelSU: ${{ fromJSON('["No", "Yes"]')[fromJSON(github.event.inputs.ENABLE_KERNELSU)] }}
         echo "::endgroup::"
@@ -93,7 +92,7 @@ jobs:
         if [ -d "drivers/kernelsu" ]; then
           rm -rf "drivers/kernelsu"
         fi
-        curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -
+        curl -LSs "https://raw.githubusercontent.com/rsuntk/KernelSU/main/kernel/setup.sh" | bash -s main
       working-directory: ${{ steps.kernel.outputs.kernel-folder }}
 
     - name: Building kernel
@@ -128,8 +127,6 @@ jobs:
         git clone --recursive --depth=1 ${{ github.event.inputs.ANYKERNEL_URL }} -b $anykernel_branch AnyKernel3
         if [ -e "Image.gz-dtb" ]; then
           cp -f Image.gz-dtb AnyKernel3
-        elif [ -e "Image-dtb" ]; then
-          cp -f Image-dtb AnyKernel3
         elif [ -e "Image.gz" ]; then
           cp -f Image.gz AnyKernel3
           echo "Warning: Don't forget about dtb."
@@ -137,7 +134,8 @@ jobs:
           cp -f Image AnyKernel3
           echo "Warning: Don't forget about dtb."
         fi
-        name=FulmenKernel-${{ github.event.inputs.CODENAME }}${{ fromJSON('["", "-KSU"]')[fromJSON(github.event.inputs.ENABLE_KERNELSU)] }}.zip
+        DATE=$(TZ=Asia/Jakarta date +"%Y%m%d_%H%M")
+        name=FulmenKernel-${{ github.event.inputs.CODENAME }}${{ fromJSON('["", "-KSU"]')[fromJSON(github.event.inputs.ENABLE_KERNELSU)] }}-${{ DATE }}.zip
         cd AnyKernel3
         zip -q -r $name *
         mv $name ../
@@ -155,7 +153,6 @@ jobs:
       with:
         files: |
           ${{ steps.kernel.outputs.kernel-folder }}/out/arch/arm64/boot/Image.gz-dtb
-          ${{ steps.kernel.outputs.kernel-folder }}/out/arch/arm64/boot/Image-dtb
           ${{ steps.kernel.outputs.kernel-folder }}/out/arch/arm64/boot/Image.gz
           ${{ steps.kernel.outputs.kernel-folder }}/out/arch/arm64/boot/Image
           ${{ steps.kernel.outputs.kernel-folder }}/out/arch/arm64/boot/${{ steps.anykernel.outputs.zipname }}
@@ -213,14 +210,16 @@ jobs:
         to: ${{ secrets.TELEGRAM_TO }}
         token: ${{ secrets.TELEGRAM_TOKEN }}
         disable_web_page_preview: true
+        document: ${{ steps.kernel.outputs.kernel-folder }}/out/arch/arm64/boot/${{ steps.anykernel.outputs.zipname }}
         message: |
           <b>${{ steps.workspace.outputs.build_title }}</b>
-          <b>Kernel successfully built!</b>, took ${{ steps.build.outputs.elapsed_time }} seconds.
+          <b>✅Kernel successfully build</b> 
+          <b>⏳Build Time<b> ${{ steps.build.outputs.elapsed_time / 60 }} minutes and ${{ steps.build.outputs.elapsed_time % 60 }} seconds.
+          <b>📱Device<b> Xiaomi Redmi 9C (Blossom)
+          <b>KernelSU</b>: ${{ steps.workspace.outputs.kernelsu }}
           
           <b>Kernel tree</b>: ${{ github.event.inputs.KERNEL_TREE }}/tree/${{ github.event.inputs.KERNEL_TREE_BRANCH }}
-          <b>KernelSU</b>: ${{ steps.workspace.outputs.kernelsu }}
           <b>Action</b>: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        document: ${{ steps.kernel.outputs.kernel-folder }}/out/arch/arm64/boot/${{ steps.anykernel.outputs.zipname }}
         format: html
 
     - name: Send Telegram notification for failure
@@ -234,7 +233,7 @@ jobs:
         disable_web_page_preview: true
         message: |
           <b>${{ steps.workspace.outputs.build_title }}</b>
-          <b>Failed building kernel</b>, check ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} for more info.
+          <b>❌Failed building kernel</b>, check ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} for more info.
           
           <b>Kernel tree</b>: ${{ github.event.inputs.KERNEL_TREE }}/tree/${{ github.event.inputs.KERNEL_TREE_BRANCH }}
           <b>KernelSU</b>: ${{ steps.workspace.outputs.kernelsu }}
