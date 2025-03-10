@@ -134,8 +134,7 @@ jobs:
           cp -f Image AnyKernel3
           echo "Warning: Don't forget about dtb."
         fi
-        DATE=$(TZ=Asia/Jakarta date +"%Y%m%d_%H%M")
-        name=FulmenKernel-${{ github.event.inputs.CODENAME }}${{ fromJSON('["", "-KSU"]')[fromJSON(github.event.inputs.ENABLE_KERNELSU)] }}-${{ DATE }}.zip
+        name=FulmenKernel-${{ github.event.inputs.CODENAME }}${{ fromJSON('["", "-KSU"]')[fromJSON(github.event.inputs.ENABLE_KERNELSU)] }}-${{date}}.zip
         cd AnyKernel3
         zip -q -r $name *
         mv $name ../
