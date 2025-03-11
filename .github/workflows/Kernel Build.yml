@@ -7,11 +7,11 @@ on:
         description: 'Custom Build Title'
         default: Fulmen Kernel Build
         required: false
-      KERNEL_TREE:
+      KERNEL_SOURCE:
         description: 'Kernel Source'
         default: https://github.com/Dhamararf/android_kernel_mediatek_mt6765g.git
         required: true
-      KERNEL_TREE_BRANCH:
+      KERNEL_SOURCE_BRANCH:
         description: 'Kernel Source Branch'
         required: true
       CODENAME:
@@ -49,7 +49,7 @@ jobs:
       run: |
         echo "::group::User Environment Variables"
         echo "Custom Build Title: ${{ github.event.inputs.BUILD_TITLE }}"
-        echo "Kernel Tree: ${{ github.event.inputs.KERNEL_TREE }}/tree/${{ github.event.inputs.KERNEL_TREE_BRANCH }}"
+        echo "Kernel Source: ${{ github.event.inputs.KERNEL_SOURCE }}/tree/${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}"
         echo "Codename: ${{ github.event.inputs.CODENAME }}"
         echo "AnyKernel Url: ${{ github.event.inputs.ANYKERNEL_URL }}/tree/${{ github.event.inputs.ANYKERNEL_BRANCH }}"
         echo "Send Notification: ${{ fromJSON('["No", "Yes"]')[fromJSON(github.event.inputs.ENABLE_KERNELSU)] }}
@@ -81,7 +81,7 @@ jobs:
 
     - name: Clone kernel source
       run: |
-        git clone --depth=1 ${{ github.event.inputs.KERNEL_TREE }} -b ${{ github.event.inputs.KERNEL_TREE_BRANCH }} kernel_tree
+        git clone --depth=1 ${{ github.event.inputs.KERNEL_SOURCE }} -b ${{ github.event.inputs.KERNEL_SOURCE_BRANCH }} kernel_tree
         echo "kernel-folder=$(pwd)/kernel_tree" >> $GITHUB_OUTPUT
       working-directory: ${{ steps.workspace.outputs.workspace-folder }}
       id: kernel
@@ -128,16 +128,14 @@ jobs:
           anykernel_branch=${{ github.event.inputs.ANYKERNEL_BRANCH }}
         fi
         git clone --recursive --depth=1 ${{ github.event.inputs.ANYKERNEL_URL }} -b $anykernel_branch AnyKernel3
-        if [ -e "Image.gz-dtb" ]; then
-          cp -f Image.gz-dtb AnyKernel3
-        elif [ -e "Image.gz" ]; then
+        if [ -e "Image.gz" ]; then
           cp -f Image.gz AnyKernel3
           echo "Warning: Don't forget about dtb."
         elif [ -e "Image" ]; then
           cp -f Image AnyKernel3
           echo "Warning: Don't forget about dtb."
         fi
-        name=FulmenKernel-${{ github.event.inputs.CODENAME }}${{ fromJSON('["", "-KSU"]')[fromJSON(github.event.inputs.ENABLE_KERNELSU)] }}.zip
+        name=FulmenKernel-${{ github.event.inputs.CODENAME }}${{ fromJSON('["", "-KSU"]')[fromJSON(github.event.inputs.ENABLE_KERNELSU)] }}-$(date +%Y%m%d).zip
         cd AnyKernel3
         zip -q -r $name *
         mv $name ../
@@ -154,7 +152,6 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          ${{ steps.kernel.outputs.kernel-folder }}/out/arch/arm64/boot/Image.gz-dtb
           ${{ steps.kernel.outputs.kernel-folder }}/out/arch/arm64/boot/Image.gz
           ${{ steps.kernel.outputs.kernel-folder }}/out/arch/arm64/boot/Image
           ${{ steps.kernel.outputs.kernel-folder }}/out/arch/arm64/boot/${{ steps.anykernel.outputs.zipname }}
@@ -169,18 +166,6 @@ jobs:
           <b>Action</b>: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    - uses: actions/upload-artifact@v4
-      if: ${{ success() && github.event.inputs.UPLOAD_TO_RELEASE != 'true' }}
-      with:
-        name: Image.gz-dtb
-        path: ${{ steps.kernel.outputs.kernel-folder }}/out/arch/arm64/boot/Image.gz-dtb
-
-    - uses: actions/upload-artifact@v4
-      if: ${{ success() && github.event.inputs.UPLOAD_TO_RELEASE != 'true' }}
-      with:
-        name: Image-dtb
-        path: ${{ steps.kernel.outputs.kernel-folder }}/out/arch/arm64/boot/Image-dtb
 
     - uses: actions/upload-artifact@v4
       if: ${{ success() && github.event.inputs.UPLOAD_TO_RELEASE != 'true' }}
@@ -215,12 +200,14 @@ jobs:
         document: ${{ steps.kernel.outputs.kernel-folder }}/out/arch/arm64/boot/${{ steps.anykernel.outputs.zipname }}
         message: |
           <b>${{ steps.workspace.outputs.build_title }}</b>
-          <b>✅Kernel successfully build</b> 
-          <b>⏳Build Time</b> ${{ steps.build.outputs.elapsed_time }} seconds.
-          <b>📱Device</b> Xiaomi Redmi 9C (Blossom)
-          <b>KernelSU</b>: ${{ steps.workspace.outputs.kernelsu }}
+          <b>✅Kernel Successfully Build</b> 
+          <b>⏳Build Time</b>: ``${{ steps.build.outputs.elapsed_time }} seconds.``
+          <b>📱Device</b>: ``Xiaomi Redmi 9C (Blossom)``
+          <b>KernelSU</b>: ``${{ steps.workspace.outputs.kernelsu }}``
+
+          Build by @dhamarar
           
-          <b>Kernel tree</b>: ${{ github.event.inputs.KERNEL_TREE }}/tree/${{ github.event.inputs.KERNEL_TREE_BRANCH }}
+          <b>Kernel Sourcea</b>: ${{ github.event.inputs.KERNEL_SOURCE }}/tree/${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}
           <b>Action</b>: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         format: html
 
