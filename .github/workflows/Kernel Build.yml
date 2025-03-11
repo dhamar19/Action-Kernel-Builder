@@ -86,7 +86,7 @@ jobs:
           <b>📱 Device</b>: ${{ github.event.inputs.DEVICE }}
           <b>💾 Codename</b>: ${{ github.event.inputs.CODENAME }}
           <b>🖥️ Branch</b>: ${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}
-          <b>🗓️ Date</b>: $(TZ=Asia/Jakarta date +%d\ %B\ %Y)
+          <b>🗓️ Date</b>: $(date+%d %B %Y)
 
           Build by @dhamarar
           
@@ -162,7 +162,7 @@ jobs:
           cp -f Image AnyKernel3
           echo "Warning: Don't forget about dtb."
         fi
-        name=FulmenKernel-${{ github.event.inputs.CODENAME }}${{ fromJSON('["", "-KSU"]')[fromJSON(github.event.inputs.ENABLE_KERNELSU)] }}-$(date +%Y%m%d).zip
+        name=AnyKernel3-FulmenKernel-${{ github.event.inputs.CODENAME }}${{ fromJSON('["", "-KSU"]')[fromJSON(github.event.inputs.ENABLE_KERNELSU)] }}-$(date +%Y%m%d).zip
         cd AnyKernel3
         zip -q -r $name *
         mv $name ../
@@ -234,8 +234,8 @@ jobs:
           <b>🖥️ Branch</b>: ${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}
           <b>📦 Zip Name</b>: ${{ steps.anykernel.outputs.zipname }}
           <b>⏳ Build Time</b>: ${{ steps.build.outputs.elapsed_time }} seconds.
-          <b>🗓️ Date</b>: $(TZ=Asia/Jakarta date +%d\ %B\ %Y)
-          <b>🔳 KernelSU</b>: ${{ steps.workspace.outputs.kernelsu }}
+          <b>🗓️ Date</b>: $(date+%d %B %Y)
+          <b>☯️ KernelSU</b>: ${{ steps.workspace.outputs.kernelsu }}
 
           Build by @dhamarar
           
