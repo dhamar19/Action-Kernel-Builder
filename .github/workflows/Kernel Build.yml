@@ -14,6 +14,9 @@ on:
       KERNEL_SOURCE_BRANCH:
         description: 'Kernel Source Branch'
         required: true
+      DEVICE:
+        description: 'Device Name'
+        required: true
       CODENAME:
         description: 'Codename'
         required: true
@@ -50,6 +53,7 @@ jobs:
         echo "::group::User Environment Variables"
         echo "Custom Build Title: ${{ github.event.inputs.BUILD_TITLE }}"
         echo "Kernel Source: ${{ github.event.inputs.KERNEL_SOURCE }}/tree/${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}"
+        echo "Device Name: ${{ github.event.inputs.DEVICE }}"
         echo "Codename: ${{ github.event.inputs.CODENAME }}"
         echo "AnyKernel Url: ${{ github.event.inputs.ANYKERNEL_URL }}/tree/${{ github.event.inputs.ANYKERNEL_BRANCH }}"
         echo "Send Notification: ${{ fromJSON('["No", "Yes"]')[fromJSON(github.event.inputs.ENABLE_KERNELSU)] }}
@@ -200,11 +204,15 @@ jobs:
         document: ${{ steps.kernel.outputs.kernel-folder }}/out/arch/arm64/boot/${{ steps.anykernel.outputs.zipname }}
         message: |
           <b>${{ steps.workspace.outputs.build_title }}</b>
-          <b>✅Kernel Successfully Build</b> 
-          <b>📦Zip Name</b>: ${{ steps.anykernel.outputs.zipname }}
-          <b>⏳Build Time</b>: ${{ steps.build.outputs.elapsed_time }} seconds.
-          <b>📱Device</b>: Xiaomi Redmi 9C (Blossom)
-          <b>KernelSU</b>: ${{ steps.workspace.outputs.kernelsu }}
+          <b>✅ Kernel Successfully Build</b>
+          
+          <b>📱 Device</b>: ${{ github.event.inputs.DEVICE }}
+          <b>💾 Codename</b>: ${{ github.event.inputs.CODENAME }}
+          <b>🖥️ Branch</b>: ${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}
+          <b>📦 Zip Name</b>: ${{ steps.anykernel.outputs.zipname }}
+          <b>⏳ Build Time</b>: ${{ steps.build.outputs.elapsed_time }} seconds.
+          <b>🗓️ Date</b>: $(TZ=Asia/Jakarta date +%d\ %B\ &Y)
+          <b>🪟 KernelSU</b>: ${{ steps.workspace.outputs.kernelsu }}
 
           Build by @dhamarar
           
