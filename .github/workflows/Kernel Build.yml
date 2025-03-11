@@ -70,7 +70,30 @@ jobs:
         echo "kernelsu=${{ fromJSON('["No", "Yes"]')[fromJSON(github.event.inputs.ENABLE_KERNELSU)] }}" >> $GITHUB_OUTPUT
         echo "build_title=${{ github.event.inputs.BUILD_TITLE || github.event.inputs.CODENAME }}" >> $GITHUB_OUTPUT
       id: workspace
+      
+    - name: Send Telegram notification for start build
+      uses: appleboy/telegram-action@master
+      env: 
+        TELEGRAM_TO: ${{ secrets.TELEGRAM_TO }}
+      with:
+        to: ${{ secrets.TELEGRAM_TO }}
+        token: ${{ secrets.TELEGRAM_TOKEN }}
+        disable_web_page_preview: true
+        message: |
+          <b>${{ github.event.inputs.BUILD_TITLE }}</b>
+          <b>===Kernel Build Start===</b>
+          
+          <b>📱 Device</b>: ${{ github.event.inputs.DEVICE }}
+          <b>💾 Codename</b>: ${{ github.event.inputs.CODENAME }}
+          <b>🖥️ Branch</b>: ${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}
+          <b>🗓️ Date</b>: $(TZ=Asia/Jakarta date +%d\ %B\ %Y)
 
+          Build by @dhamarar
+          
+          <b>Kernel Source</b>: ${{ github.event.inputs.KERNEL_SOURCE }}
+          <b>Action</b>: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        format: html
+        
     - name: Prepare the build environment
       run: |
         sudo apt-get install -y bc flex curl git zip ftp libncurses5 libssl-dev lftp zstd wget libfl-dev python2 python3 libarchive-tools
@@ -211,8 +234,8 @@ jobs:
           <b>🖥️ Branch</b>: ${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}
           <b>📦 Zip Name</b>: ${{ steps.anykernel.outputs.zipname }}
           <b>⏳ Build Time</b>: ${{ steps.build.outputs.elapsed_time }} seconds.
-          <b>🗓️ Date</b>: $(TZ=Asia/Jakarta date +%d\ %B\ &Y)
-          <b>🪟 KernelSU</b>: ${{ steps.workspace.outputs.kernelsu }}
+          <b>🗓️ Date</b>: $(TZ=Asia/Jakarta date +%d\ %B\ %Y)
+          <b>🔳 KernelSU</b>: ${{ steps.workspace.outputs.kernelsu }}
 
           Build by @dhamarar
           
