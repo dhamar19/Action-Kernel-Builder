@@ -201,13 +201,14 @@ jobs:
         message: |
           <b>${{ steps.workspace.outputs.build_title }}</b>
           <b>✅Kernel Successfully Build</b> 
-          <b>⏳Build Time</b>: ``${{ steps.build.outputs.elapsed_time }} seconds.``
-          <b>📱Device</b>: ``Xiaomi Redmi 9C (Blossom)``
-          <b>KernelSU</b>: ``${{ steps.workspace.outputs.kernelsu }}``
+          <b>📦Zip Name</b>: ${{ steps.anykernel.outputs.zipname }}
+          <b>⏳Build Time</b>: ${{ steps.build.outputs.elapsed_time }} seconds.
+          <b>📱Device</b>: Xiaomi Redmi 9C (Blossom)
+          <b>KernelSU</b>: ${{ steps.workspace.outputs.kernelsu }}
 
           Build by @dhamarar
           
-          <b>Kernel Sourcea</b>: ${{ github.event.inputs.KERNEL_SOURCE }}/tree/${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}
+          <b>Kernel Source</b>: ${{ github.event.inputs.KERNEL_SOURCE }}
           <b>Action</b>: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         format: html
 
