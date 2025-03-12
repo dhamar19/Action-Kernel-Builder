@@ -86,7 +86,7 @@ jobs:
           <b>📱 Device</b>: ${{ github.event.inputs.DEVICE }}
           <b>💾 Codename</b>: ${{ github.event.inputs.CODENAME }}
           <b>🖥️ Branch</b>: ${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}
-          <b>🗓️ Date</b>: $(date+%d %B %Y)
+          <b>🗓️ Date</b>: $(date +'%d %B %Y')
 
           Build by @dhamarar
           
@@ -234,7 +234,7 @@ jobs:
           <b>🖥️ Branch</b>: ${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}
           <b>📦 Zip Name</b>: ${{ steps.anykernel.outputs.zipname }}
           <b>⏳ Build Time</b>: ${{ steps.build.outputs.elapsed_time }} seconds.
-          <b>🗓️ Date</b>: $(date+%d %B %Y)
+          <b>🗓️ Date</b>: $(date +'%d %B %Y')
           <b>☯️ KernelSU</b>: ${{ steps.workspace.outputs.kernelsu }}
 
           Build by @dhamarar
