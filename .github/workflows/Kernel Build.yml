@@ -62,6 +62,8 @@ jobs:
         mkdir workspace
         cd workspace
 
+        echo "current_date=$(date +'%d %B %Y')" >> $GITHUB_OUTPUT
+        echo "current_time=$(TZ=Asia/Jakarta date +'%H:%M:%S %Z')" >> $GITHUB_OUTPUT
         echo "workspace-folder=$(pwd)" >> $GITHUB_OUTPUT
         echo "start_time=$(date +%s)" >> $GITHUB_OUTPUT
         echo "kernelsu=${{ fromJSON('["No", "Yes"]')[fromJSON(github.event.inputs.ENABLE_KERNELSU)] }}" >> $GITHUB_OUTPUT
@@ -83,9 +85,9 @@ jobs:
           <b>📱 Device</b>: Xiaomi Redmi 9C
           <b>💾 Codename</b>: Blossom
           <b>🖥️ Branch</b>: ${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}
-          <b>🗓️ Date</b>: $(date +'%d %B %Y')
-          <b>⏲️ Local Time</b>: $(TZ=Asia/Jakarta date +'%H:%M:%S %Z')
-
+          <b>🗓️ Date</b>: ${{ steps.workspace.outputs.current_date }}
+          <b>⏲️ Local Time</b>: ${{ steps.workspace.outputs.current_time }}
+          
           Build by @dhamarar
           
           <b>Kernel Source</b>: ${{ github.event.inputs.KERNEL_SOURCE }}
@@ -229,13 +231,13 @@ jobs:
           
           <b>📱 Device</b>: Xiaomi Redmi 9C 
           <b>💾 Codename</b>: Blossom
-          <b>🖥️ Branch</b>: ${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}
+          <b>🏷️ Branch</b>: ${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}
           <b>📦 Zip Name</b>: ${{ steps.anykernel.outputs.zipname }}
           <b>⏳ Build Time</b>: ${{ steps.build.outputs.elapsed_time }} seconds.
-          <b>🗓️ Date</b>: $(date +'%d %B %Y')
+          <b>🗓️ Date</b>: ${{ steps.workspace.outputs.current_date }}
+          <b>⏲️ Local Time</b>: ${{ steps.workspace.outputs.current_time }}
           <b>☯️ KernelSU</b>: ${{ steps.workspace.outputs.kernelsu }}
-          <b>⏲️ Local Time</b>: $(TZ=Asia/Jakarta date +'%H:%M:%S %Z')
-
+          
           Build by @dhamarar
           
           <b>Kernel Source</b>: ${{ github.event.inputs.KERNEL_SOURCE }}
