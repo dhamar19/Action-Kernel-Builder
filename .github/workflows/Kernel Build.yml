@@ -14,11 +14,8 @@ on:
       KERNEL_SOURCE_BRANCH:
         description: 'Kernel Source Branch'
         required: true
-      DEVICE:
-        description: 'Device Name'
-        required: true
-      CODENAME:
-        description: 'Codename'
+      DEFCONFIG:
+        description: 'Kernel Defconfig'
         required: true
       ANYKERNEL_URL:
         description: 'AnyKernel Url'
@@ -26,7 +23,8 @@ on:
         required: false
       ANYKERNEL_BRANCH:
         description: 'AnyKernel Branch (defaults to codename)'
-        required: false
+        default: master
+        required: true
       SEND_NOTIFICATION:
         description: 'Send Notification'
         type: boolean
@@ -53,8 +51,7 @@ jobs:
         echo "::group::User Environment Variables"
         echo "Custom Build Title: ${{ github.event.inputs.BUILD_TITLE }}"
         echo "Kernel Source: ${{ github.event.inputs.KERNEL_SOURCE }}/tree/${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}"
-        echo "Device Name: ${{ github.event.inputs.DEVICE }}"
-        echo "Codename: ${{ github.event.inputs.CODENAME }}"
+        echo "Kernel Defconfig: ${{ github.event.inputs.DEFCONFIG }}"
         echo "AnyKernel Url: ${{ github.event.inputs.ANYKERNEL_URL }}/tree/${{ github.event.inputs.ANYKERNEL_BRANCH }}"
         echo "Send Notification: ${{ fromJSON('["No", "Yes"]')[fromJSON(github.event.inputs.ENABLE_KERNELSU)] }}
         echo "KernelSU: ${{ fromJSON('["No", "Yes"]')[fromJSON(github.event.inputs.ENABLE_KERNELSU)] }}
@@ -83,8 +80,8 @@ jobs:
           <b>${{ github.event.inputs.BUILD_TITLE }}</b>
           <b>===Kernel Build Start===</b>
           
-          <b>📱 Device</b>: ${{ github.event.inputs.DEVICE }}
-          <b>💾 Codename</b>: ${{ github.event.inputs.CODENAME }}
+          <b>📱 Device</b>: Xiaomi Redmi 9C
+          <b>💾 Codename</b>: Blossom
           <b>🖥️ Branch</b>: ${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}
           <b>🗓️ Date</b>: $(date +'%d %B %Y')
 
@@ -139,7 +136,7 @@ jobs:
         export CROSS_COMPILE_ARM32=arm-linux-androideabi-
         export KBUILD_BUILD_USER="DhamarAr"
         export KBUILD_BUILD_HOST="Ordinary-Being"
-        make O=out clean mrproper CC=clang ${{ github.event.inputs.CODENAME }}_defconfig 
+        make O=out clean mrproper CC=clang ${{ github.event.inputs.DEFCONFIG }}_defconfig 
         make O=out CC=clang -j$(nproc --all)
         echo "elapsed_time=$(echo "$(date +%s)"-"${{ steps.workspace.outputs.start_time }}" | bc)" >> $GITHUB_OUTPUT
       working-directory: ${{ steps.kernel.outputs.kernel-folder }}
@@ -150,7 +147,7 @@ jobs:
       continue-on-error: true
       run: |
         if [[ -z "${{ github.event.inputs.ANYKERNEL_BRANCH }}" ]]; then
-          anykernel_branch=${{ github.event.inputs.CODENAME }}
+          anykernel_branch=${{ github.event.inputs.DEFCONFIG }}
         else
           anykernel_branch=${{ github.event.inputs.ANYKERNEL_BRANCH }}
         fi
@@ -162,7 +159,7 @@ jobs:
           cp -f Image AnyKernel3
           echo "Warning: Don't forget about dtb."
         fi
-        name=AnyKernel3-FulmenKernel-${{ github.event.inputs.CODENAME }}${{ fromJSON('["", "-KSU"]')[fromJSON(github.event.inputs.ENABLE_KERNELSU)] }}-$(date +%Y%m%d).zip
+        name=AnyKernel3-FulmenKernel-Blossom-${{ fromJSON('["", "-KSU"]')[fromJSON(github.event.inputs.ENABLE_KERNELSU)] }}-$(date +%Y%m%d).zip
         cd AnyKernel3
         zip -q -r $name *
         mv $name ../
@@ -229,8 +226,8 @@ jobs:
           <b>${{ steps.workspace.outputs.build_title }}</b>
           <b>✅ Kernel Successfully Build</b>
           
-          <b>📱 Device</b>: ${{ github.event.inputs.DEVICE }}
-          <b>💾 Codename</b>: ${{ github.event.inputs.CODENAME }}
+          <b>📱 Device</b>: Xiaomi Redmi 9C 
+          <b>💾 Codename</b>: Blossom
           <b>🖥️ Branch</b>: ${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}
           <b>📦 Zip Name</b>: ${{ steps.anykernel.outputs.zipname }}
           <b>⏳ Build Time</b>: ${{ steps.build.outputs.elapsed_time }} seconds.
