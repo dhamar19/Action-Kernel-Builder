@@ -84,6 +84,7 @@ jobs:
           <b>💾 Codename</b>: Blossom
           <b>🖥️ Branch</b>: ${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}
           <b>🗓️ Date</b>: $(date +'%d %B %Y')
+          <b>⏲️ Local Time</b>: $(TZ=Asia/Jakarta date +'%H:%M:%S %Z')
 
           Build by @dhamarar
           
@@ -233,6 +234,7 @@ jobs:
           <b>⏳ Build Time</b>: ${{ steps.build.outputs.elapsed_time }} seconds.
           <b>🗓️ Date</b>: $(date +'%d %B %Y')
           <b>☯️ KernelSU</b>: ${{ steps.workspace.outputs.kernelsu }}
+          <b>⏲️ Local Time</b>: $(TZ=Asia/Jakarta date +'%H:%M:%S %Z')
 
           Build by @dhamarar
           
