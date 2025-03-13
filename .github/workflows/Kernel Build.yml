@@ -84,7 +84,7 @@ jobs:
           
           <b>📱 Device</b>: Xiaomi Redmi 9C
           <b>💾 Codename</b>: Blossom
-          <b>🖥️ Branch</b>: ${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}
+          <b>🏷️ Branch</b>: ${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}
           <b>🗓️ Date</b>: ${{ steps.workspace.outputs.current_date }}
           <b>⏲️ Local Time</b>: ${{ steps.workspace.outputs.current_time }}
           
@@ -257,7 +257,7 @@ jobs:
           <b>${{ steps.workspace.outputs.build_title }}</b>
           <b>❌Failed building kernel</b>, check ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} for more info.
           
-          <b>Kernel tree</b>: ${{ github.event.inputs.KERNEL_TREE }}/tree/${{ github.event.inputs.KERNEL_TREE_BRANCH }}
+          <b>Kernel tree</b>: ${{ github.event.inputs.KERNEL_SOURCE }}
           <b>KernelSU</b>: ${{ steps.workspace.outputs.kernelsu }}
         format: html
       continue-on-error: true
