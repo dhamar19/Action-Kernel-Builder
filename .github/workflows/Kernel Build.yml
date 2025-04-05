@@ -235,7 +235,6 @@ jobs:
           <b>📦 Zip Name</b>: ${{ steps.anykernel.outputs.zipname }}
           <b>⏳ Build Time</b>: ${{ steps.build.outputs.elapsed_time }} seconds.
           <b>🗓️ Date</b>: ${{ steps.workspace.outputs.current_date }}
-          <b>⏲️ Local Time</b>: ${{ steps.workspace.outputs.current_time }}
           <b>☯️ KernelSU</b>: ${{ steps.workspace.outputs.kernelsu }}
           
           Build by @dhamarar
@@ -257,7 +256,7 @@ jobs:
           <b>${{ steps.workspace.outputs.build_title }}</b>
           <b>❌Failed building kernel</b>, check ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} for more info.
           
-          <b>Kernel tree</b>: ${{ github.event.inputs.KERNEL_SOURCE }}
+          <b>Kernel Source</b>: ${{ github.event.inputs.KERNEL_SOURCE }}
           <b>KernelSU</b>: ${{ steps.workspace.outputs.kernelsu }}
         format: html
       continue-on-error: true
