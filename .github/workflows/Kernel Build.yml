@@ -122,7 +122,8 @@ jobs:
         if [ -d "drivers/kernelsu" ]; then
           rm -rf "drivers/kernelsu"
         fi
-        curl -LSs "https://raw.githubusercontent.com/rifsxd/KernelSU-Next/next-susfs/kernel/setup.sh" | bash -s next-susfs
+        curl -LSs "https://raw.githubusercontent.com/rsuntk/KernelSU/main/kernel/setup.sh" | bash -s main
+        git checkout susfs-v1.5.5
       working-directory: ${{ steps.kernel.outputs.kernel-folder }}
 
     - name: Building kernel
@@ -162,7 +163,7 @@ jobs:
           cp -f Image AnyKernel3
           echo "Warning: Don't forget about dtb."
         fi
-        name=AnyKernel3-FulmenKernel-Blossom-${{ fromJSON('["", "-KSU"]')[fromJSON(github.event.inputs.ENABLE_KERNELSU)] }}-$(date +%Y%m%d).zip
+        name=AnyKernel3-FulmenKernel-Blossom${{ fromJSON('["", "-KSU"]')[fromJSON(github.event.inputs.ENABLE_KERNELSU)] }}-$(date +%Y%m%d).zip
         cd AnyKernel3
         zip -q -r $name *
         mv $name ../
