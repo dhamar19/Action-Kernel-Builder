@@ -124,7 +124,7 @@ jobs:
         fi
         curl -LSs "https://raw.githubusercontent.com/rsuntk/KernelSU/main/kernel/setup.sh" | bash -s main
         cd KernelSU 
-        git checkout susfs-v1.5.5
+        git checkout susfs-v1.5.7
         cd ..
       working-directory: ${{ steps.kernel.outputs.kernel-folder }}
 
