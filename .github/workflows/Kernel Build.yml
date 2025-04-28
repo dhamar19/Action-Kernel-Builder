@@ -122,10 +122,7 @@ jobs:
         if [ -d "drivers/kernelsu" ]; then
           rm -rf "drivers/kernelsu"
         fi
-        curl -LSs "https://raw.githubusercontent.com/rsuntk/KernelSU/main/kernel/setup.sh" | bash -s main
-        cd KernelSU 
-        git checkout susfs-v1.5.7
-        cd ..
+        curl -LSs "https://raw.githubusercontent.com/rsuntk/KernelSU/main/kernel/setup.sh" | bash -s susfs-v1.5.7
       working-directory: ${{ steps.kernel.outputs.kernel-folder }}
 
     - name: Building kernel
