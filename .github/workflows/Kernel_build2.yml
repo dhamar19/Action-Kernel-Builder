@@ -76,7 +76,6 @@ jobs:
       id: workspace
       
     - name: Send Telegram notification for start build
-      if: ${{ github.event.inputs.SEND_NOTIFICATION == true }}
       uses: appleboy/telegram-action@master
       env: 
         TELEGRAM_TO: ${{ secrets.TELEGRAM_TO }}
@@ -277,6 +276,7 @@ jobs:
         to: ${{ secrets.TELEGRAM_TO }}
         token: ${{ secrets.TELEGRAM_TOKEN }}
         disable_web_page_preview: true
+        document: ${{ steps.kernel.outputs.kernel-folder }}/out/compile.log
         message: |
           <b>${{ steps.workspace.outputs.build_title }}</b>
           <b>❌Failed building kernel</b>, check ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} for more info.
