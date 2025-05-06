@@ -37,10 +37,6 @@ on:
         description: 'KernelSU'
         type: boolean
         default: false
-      UPLOAD_TO_RELEASE:
-        description: 'Upload to release'
-        type: boolean
-        default: false
 
 jobs:
   build:
@@ -68,7 +64,6 @@ jobs:
         cd workspace
 
         echo "current_date=$(date +'%d %B %Y')" >> $GITHUB_OUTPUT
-        echo "current_time=$(TZ=Asia/Jakarta date +'%H:%M:%S %Z')" >> $GITHUB_OUTPUT
         echo "workspace-folder=$(pwd)" >> $GITHUB_OUTPUT
         echo "start_time=$(date +%s)" >> $GITHUB_OUTPUT
         echo "kernelsu=${{ fromJSON('["No", "Yes"]')[fromJSON(github.event.inputs.ENABLE_KERNELSU)] }}" >> $GITHUB_OUTPUT
@@ -85,13 +80,12 @@ jobs:
         disable_web_page_preview: true
         message: |
           <b>${{ github.event.inputs.BUILD_TITLE }}</b>
-          <b>===Kernel Build Start===</b>
+          <b>⚒️Kernel Build Start⚒️</b>
           
           <b>📱 Device</b>: Xiaomi Redmi 9C
           <b>💾 Codename</b>: ${{ github.event.inputs.CODENAME }}
           <b>🏷️ Branch</b>: ${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}
           <b>🗓️ Date</b>: ${{ steps.workspace.outputs.current_date }}
-          <b>⏲️ Local Time</b>: ${{ steps.workspace.outputs.current_time }}
           
           Build by @dhamarar
           
@@ -176,16 +170,13 @@ jobs:
         fi
         git clone --recursive --depth=1 ${{ github.event.inputs.ANYKERNEL_URL }} -b $anykernel_branch AnyKernel3
         
-        if [ ! -f "Image.gz" ] && [ ! -f "Image" ]; then
+        if [ ! -f "Image.gz" ]; then
           echo "Error: Tidak menemukan Image.gz atau Image!"
           exit 1
         fi
         
         if [ -e "Image.gz" ]; then
           cp -f Image.gz AnyKernel3
-          echo "Warning: Don't forget about dtb."
-        elif [ -e "Image" ]; then
-          cp -f Image AnyKernel3
           echo "Warning: Don't forget about dtb."
         fi
         
@@ -200,44 +191,11 @@ jobs:
     - name: Check the output directory before uploading
       run: |
         ls -al ${{ steps.kernel.outputs.kernel-folder }}/out/arch/arm64/boot/
-
-    - name: Upload to Release
-      if: ${{ github.event.inputs.UPLOAD_TO_RELEASE == 'true' }}
-      uses: softprops/action-gh-release@v1
-      with:
-        files: |
-          ${{ steps.kernel.outputs.kernel-folder }}/out/arch/arm64/boot/Image.gz
-          ${{ steps.kernel.outputs.kernel-folder }}/out/arch/arm64/boot/Image
-          ${{ steps.kernel.outputs.kernel-folder }}/out/arch/arm64/boot/${{ steps.anykernel.outputs.zipname }}
-        name: ${{ github.event.inputs.CODENAME }}-${{ github.run_id }}
-        tag_name: ${{ github.run_id }}
-        body: |
-          <b>${{ steps.workspace.outputs.build_title }}</b>
-          <b>Kernel successfully built!</b>, took ${{ steps.build.outputs.elapsed_time }} seconds.
-          
-          <b>Kernel tree</b>: ${{ github.event.inputs.KERNEL_SOURCE }}/tree/${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}
-          <b>KernelSU</b>: ${{ steps.workspace.outputs.kernelsu }}
-          <b>Action</b>: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
     - uses: actions/upload-artifact@v4
       if: ${{ success() && github.event.inputs.UPLOAD_TO_RELEASE != 'true' }}
       with:
         name: Image.gz
         path: ${{ steps.kernel.outputs.kernel-folder }}/out/arch/arm64/boot/Image.gz
-
-    - uses: actions/upload-artifact@v4
-      if: ${{ success() && github.event.inputs.UPLOAD_TO_RELEASE != 'true' }}
-      with:
-        name: Image
-        path: ${{ steps.kernel.outputs.kernel-folder }}/out/arch/arm64/boot/Image
-
-    - uses: actions/upload-artifact@v4
-      if: ${{ success() && github.event.inputs.ANYKERNEL_URL != '' && github.event.inputs.UPLOAD_TO_RELEASE != 'true' }}
-      with:
-        name: ${{ steps.anykernel.outputs.zipname }}
-        path: ${{ steps.kernel.outputs.kernel-folder }}/out/arch/arm64/boot/${{ steps.anykernel.outputs.zipname }}
 
     - name: Send Telegram notification for success
       uses: appleboy/telegram-action@master
