@@ -1,4 +1,4 @@
-name: Kernel Build
+name: Kernel Build 2
 
 on:
   workflow_dispatch:
@@ -89,14 +89,13 @@ jobs:
           
           Build by @dhamarar
           
-          <b>Kernel Source</b>: ${{ github.event.inputs.KERNEL_SOURCE }}
           <b>Action</b>: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         format: html
         
     - name: Prepare the build environment
       run: |
         sudo apt update -y && sudo apt upgrade -y && sudo apt-get install -y bc flex curl git zip ftp libncurses5 libssl-dev lftp zstd wget libfl-dev python2 python3 libarchive-tools gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-        curl -LSs "https://raw.githubusercontent.com/rsuntk/toolchains/refs/heads/README/clone.sh" | bash -s clang-11
+        mkdir clang ; cd clang ; wget https://github.com/ZyCromerZ/Clang/releases/download/11.1.0-20220724-release/Clang-11.1.0-20220724.tar.gz ; tar -xf * && cd ..
         echo "tools-folder=$(pwd)" >> $GITHUB_OUTPUT
       working-directory: ${{ steps.workspace.outputs.workspace-folder }}
       id: tools
@@ -117,12 +116,12 @@ jobs:
         if [ -d "drivers/kernelsu" ]; then
           rm -rf "drivers/kernelsu"
         fi
-        curl -LSs "https://raw.githubusercontent.com/rsuntk/KernelSU/main/kernel/setup.sh" | bash -s susfs-v1.5.5
+        curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU-Ultra/main/kernel/setup.sh" | bash -s susfs-dev
       working-directory: ${{ steps.kernel.outputs.kernel-folder }}
 
     - name: Building kernel
       run: |
-        export CLANGDIR="${{ steps.tools.outputs.tools-folder }}/clang-11"
+        export CLANGDIR="${{ steps.tools.outputs.tools-folder }}/clang"
         rm -f ${{ steps.kernel.outputs.kernel-folder }}/out/compile.log
         mkdir -p ${{ steps.kernel.outputs.kernel-folder }}/out
 
