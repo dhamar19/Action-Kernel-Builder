@@ -64,10 +64,10 @@ jobs:
         echo "kernelsu=${{ fromJSON('["No", "Yes"]')[fromJSON(github.event.inputs.ENABLE_KERNELSU)] }}" >> $GITHUB_OUTPUT
         echo "build_title=${{ github.event.inputs.BUILD_TITLE || github.event.inputs.CODENAME }}" >> $GITHUB_OUTPUT
       id: workspace
-      
+
     - name: Send Telegram notification for start build
       uses: appleboy/telegram-action@master
-      env: 
+      env:
         TELEGRAM_TO: ${{ secrets.TELEGRAM_TO }}
       with:
         to: ${{ secrets.TELEGRAM_TO }}
@@ -86,7 +86,7 @@ jobs:
           
           <b>Action</b>: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         format: html
-        
+
     - name: Prepare the build environment
       run: |
         sudo apt update -y && sudo apt upgrade -y && sudo apt-get install -y bc flex curl git zip ftp libncurses5 libssl-dev lftp zstd wget libfl-dev python2 python3 libarchive-tools gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
@@ -116,6 +116,7 @@ jobs:
 
     - name: Building kernel
       run: |
+        set -e
         export CLANGDIR="${{ steps.tools.outputs.tools-folder }}/clang-11"
         rm -f ${{ steps.kernel.outputs.kernel-folder }}/out/compile.log
         mkdir -p ${{ steps.kernel.outputs.kernel-folder }}/out
@@ -124,7 +125,7 @@ jobs:
         export KBUILD_BUILD_HOST="Ordinary_Being"
         export USE_CCACHE=1
         export PATH="$CLANGDIR/bin:$PATH"
-        
+
         make clean && make mrproper
         make O=out ARCH=arm64 ${{ github.event.inputs.DEFCONFIG }}_defconfig
 
@@ -149,32 +150,32 @@ jobs:
         }
 
         fulmen 2>&1 | tee -a ${{ steps.kernel.outputs.kernel-folder }}/out/compile.log
-    
+        cp ${{ steps.kernel.outputs.kernel-folder }}/out/compile.log $GITHUB_WORKSPACE/
         echo "elapsed_time=$(echo "$(date +%s)"-"${{ steps.workspace.outputs.start_time }}" | bc)" >> $GITHUB_OUTPUT
       working-directory: ${{ steps.kernel.outputs.kernel-folder }}
       id: build
 
     - name: AnyKernel3
       if: ${{ success() && github.event.inputs.ANYKERNEL_URL != '' }}
-      continue-on-error: true
       run: |
+        set -e
         if [[ -z "${{ github.event.inputs.ANYKERNEL_BRANCH }}" ]]; then
           anykernel_branch=${{ github.event.inputs.DEFCONFIG }}
         else
           anykernel_branch=${{ github.event.inputs.ANYKERNEL_BRANCH }}
         fi
         git clone --recursive --depth=1 ${{ github.event.inputs.ANYKERNEL_URL }} -b $anykernel_branch AnyKernel3
-        
+
         if [ ! -f "Image.gz" ]; then
           echo "Error: Tidak menemukan Image.gz atau Image!"
           exit 1
         fi
-        
+
         if [ -e "Image.gz" ]; then
           cp -f Image.gz AnyKernel3
           echo "Warning: Don't forget about dtb."
         fi
-        
+
         name=AnyKernel3-FulmenKernel-${{ github.event.inputs.CODENAME }}${{ fromJSON('["", "-KSU"]')[fromJSON(github.event.inputs.ENABLE_KERNELSU)] }}-$(date +%Y%m%d).zip
         cd AnyKernel3
         zip -q -r $name *
@@ -186,7 +187,7 @@ jobs:
     - name: Check the output directory before uploading
       run: |
         ls -al ${{ steps.kernel.outputs.kernel-folder }}/out/arch/arm64/boot/
-        
+
     - uses: actions/upload-artifact@v4
       if: ${{ success() }}
       with:
@@ -195,7 +196,7 @@ jobs:
 
     - name: Send Telegram notification for success
       uses: appleboy/telegram-action@master
-      env: 
+      env:
         TELEGRAM_TO: ${{ secrets.TELEGRAM_TO }}
       if: ${{ success() && steps.anykernel.outputs.zipname != '' && env.TELEGRAM_TO != '' }}
       with:
@@ -217,23 +218,23 @@ jobs:
           
           Build by @dhamarar
           
+          <b>Kernel Source</b>: ${{ github.event.inputs.KERNEL_SOURCE }}
           <b>Action</b>: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         format: html
 
     - name: Send Telegram notification for failure
       uses: appleboy/telegram-action@master
-      env: 
+      env:
         TELEGRAM_TO: ${{ secrets.TELEGRAM_TO }}
       if: ${{ failure() && env.TELEGRAM_TO != '' }}
       with:
         to: ${{ secrets.TELEGRAM_TO }}
         token: ${{ secrets.TELEGRAM_TOKEN }}
         disable_web_page_preview: true
-        document: ${{ steps.kernel.outputs.kernel-folder }}/out/compile.log
+        document: compile.log
         message: |
           <b>${{ steps.workspace.outputs.build_title }}</b>
           <b>❌ Failed building kernel</b>, check ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} for more info.
           
           <b>KernelSU</b>: ${{ steps.workspace.outputs.kernelsu }}
         format: html
-      continue-on-error: true
