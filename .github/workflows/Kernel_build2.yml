@@ -29,10 +29,6 @@ on:
         description: 'AnyKernel Branch (defaults to codename)'
         default: master
         required: true
-      SEND_NOTIFICATION:
-        description: 'Send Notification'
-        type: boolean
-        default: true
       ENABLE_KERNELSU:
         description: 'KernelSU'
         type: boolean
@@ -45,7 +41,7 @@ jobs:
     permissions:
       contents: write
     steps:
-    
+
     - name: Display User Inputs
       run: |
         echo "::group::User Environment Variables"
@@ -54,7 +50,6 @@ jobs:
         echo "Kernel Source: ${{ github.event.inputs.KERNEL_SOURCE }}/tree/${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}"
         echo "Kernel Defconfig: ${{ github.event.inputs.DEFCONFIG }}"
         echo "AnyKernel Url: ${{ github.event.inputs.ANYKERNEL_URL }}/tree/${{ github.event.inputs.ANYKERNEL_BRANCH }}"
-        echo "Send Notification: ${{ fromJSON('["No", "Yes"]')[fromJSON(github.event.inputs.SEND_NOTIFICATION)] }}"
         echo "KernelSU: ${{ fromJSON('["No", "Yes"]')[fromJSON(github.event.inputs.ENABLE_KERNELSU)] }}"
         echo "::endgroup::"
 
@@ -191,8 +186,9 @@ jobs:
     - name: Check the output directory before uploading
       run: |
         ls -al ${{ steps.kernel.outputs.kernel-folder }}/out/arch/arm64/boot/
+        
     - uses: actions/upload-artifact@v4
-      if: ${{ success() && github.event.inputs.UPLOAD_TO_RELEASE != 'true' }}
+      if: ${{ success() }}
       with:
         name: Image.gz
         path: ${{ steps.kernel.outputs.kernel-folder }}/out/arch/arm64/boot/Image.gz
@@ -201,7 +197,7 @@ jobs:
       uses: appleboy/telegram-action@master
       env: 
         TELEGRAM_TO: ${{ secrets.TELEGRAM_TO }}
-      if: ${{ success() && steps.anykernel.outputs.zipname != '' && env.TELEGRAM_TO != '' && github.event.inputs.SEND_NOTIFICATION == 'true' }}
+      if: ${{ success() && steps.anykernel.outputs.zipname != '' && env.TELEGRAM_TO != '' }}
       with:
         to: ${{ secrets.TELEGRAM_TO }}
         token: ${{ secrets.TELEGRAM_TOKEN }}
@@ -221,7 +217,6 @@ jobs:
           
           Build by @dhamarar
           
-          <b>Kernel Source</b>: ${{ github.event.inputs.KERNEL_SOURCE }}
           <b>Action</b>: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         format: html
 
@@ -229,7 +224,7 @@ jobs:
       uses: appleboy/telegram-action@master
       env: 
         TELEGRAM_TO: ${{ secrets.TELEGRAM_TO }}
-      if: ${{ failure() && env.TELEGRAM_TO != '' && github.event.inputs.SEND_NOTIFICATION == 'true' }}
+      if: ${{ failure() && env.TELEGRAM_TO != '' }}
       with:
         to: ${{ secrets.TELEGRAM_TO }}
         token: ${{ secrets.TELEGRAM_TOKEN }}
@@ -237,9 +232,8 @@ jobs:
         document: ${{ steps.kernel.outputs.kernel-folder }}/out/compile.log
         message: |
           <b>${{ steps.workspace.outputs.build_title }}</b>
-          <b>❌Failed building kernel</b>, check ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} for more info.
+          <b>❌ Failed building kernel</b>, check ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} for more info.
           
-          <b>Kernel Source</b>: ${{ github.event.inputs.KERNEL_SOURCE }}
           <b>KernelSU</b>: ${{ steps.workspace.outputs.kernelsu }}
         format: html
       continue-on-error: true
