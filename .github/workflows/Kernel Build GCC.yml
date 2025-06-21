@@ -102,19 +102,17 @@ jobs:
     - name: Building kernel
       run: |
         set -e
-
         mkdir -p output
         export ARCH=arm
         export CROSS_COMPILE="${{ steps.tools.outputs.tools-folder }}/bin/arm-eabi-"
         export USE_CCACHE=1
-        
+
         make mrproper
         make -C $(pwd) O=output VARIANT_DEFCONFIG=msm8916_sec_j5lte_eur_defconfig msm8916_sec_defconfig SELINUX_DEFCONFIG=selinux_defconfig
-        make -j$(nproc --all) O=output 2>&1 | tee -a output/compile.log
+        make -j$(nproc --all) O=output 2>&1 | tee output/compile.log
 
-        cp output/arch/arm/boot/Image $(pwd)/arch/arm/boot/zImage
         cp output/compile.log $GITHUB_WORKSPACE/
-        echo "elapsed_time=$(echo "$(date +%s)"-"${{ steps.workspace.outputs.start_time }}" | bc)" >> $GITHUB_OUTPUT
+        echo "elapsed_time=$(($(date +%s) - ${{ steps.workspace.outputs.start_time }}))" >> $GITHUB_OUTPUT
       working-directory: ${{ steps.kernel.outputs.kernel-folder }}
       id: build
 
@@ -122,31 +120,35 @@ jobs:
       if: ${{ success() && github.event.inputs.ANYKERNEL_URL != '' }}
       run: |
         set -e
+        if [[ -z "${{ github.event.inputs.ANYKERNEL_BRANCH }}" ]]; then
+          anykernel_branch=master
+        else
+          anykernel_branch=${{ github.event.inputs.ANYKERNEL_BRANCH }}
+        fi
 
-        git clone --depth=1 ${{ github.event.inputs.ANYKERNEL_URL }} -b ${{ github.event.inputs.ANYKERNEL_BRANCH }} AnyKernel3
+        git clone --recursive --depth=1 ${{ github.event.inputs.ANYKERNEL_URL }} -b $anykernel_branch AnyKernel3
 
-        cd output/arch/arm/boot/
         IMG=""
         if [[ -f "zImage" ]]; then
           IMG="zImage"
         elif [[ -f "Image.gz-dtb" ]]; then
           IMG="Image.gz-dtb"
+        elif [[ -f "Image.gz" ]]; then
+          IMG="Image.gz"
         elif [[ -f "Image" ]]; then
           IMG="Image"
         else
-          echo "Error: No kernel image found!"
+          echo "Error: Tidak menemukan kernel image yang valid!"
           exit 1
         fi
 
-        cp -f "$IMG" ../../../AnyKernel3/
-        echo "Warning: Don't forget about dtb if needed."
-
-        cd ../../../AnyKernel3
-        name=AnyKernel3-FulmenKernel-J5LTE-$(date +%Y%m%d).zip
-        zip -r -q $name *
+        cp -f "$IMG" AnyKernel3/
+        name=AnyKernel3-FulmenKernel-${{ github.event.inputs.CODENAME }}-$(date +%Y%m%d).zip
+        cd AnyKernel3
+        zip -q -r $name *
         mv $name ../
         echo "zipname=$name" >> $GITHUB_OUTPUT
-      working-directory: ${{ steps.kernel.outputs.kernel-folder }}
+      working-directory: ${{ steps.kernel.outputs.kernel-folder }}/output/arch/arm/boot/
       id: anykernel
 
     - name: Upload zImage artifact
@@ -161,7 +163,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: Kernel-Zip
-        path: ${{ steps.kernel.outputs.kernel-folder }}/AnyKernel3/${{ steps.anykernel.outputs.zipname }}
+        path: ${{ steps.kernel.outputs.kernel-folder }}/output/arch/arm/boot/${{ steps.anykernel.outputs.zipname }}
 
     - name: Send Telegram notification for success
       uses: appleboy/telegram-action@master
@@ -172,7 +174,7 @@ jobs:
         to: ${{ secrets.TELEGRAM_TO }}
         token: ${{ secrets.TELEGRAM_TOKEN }}
         disable_web_page_preview: true
-        document: ${{ steps.kernel.outputs.kernel-folder }}/AnyKernel3/${{ steps.anykernel.outputs.zipname }}
+        document: ${{ steps.kernel.outputs.kernel-folder }}/output/arch/arm/boot/${{ steps.anykernel.outputs.zipname }}
         message: |
           <b>${{ steps.workspace.outputs.build_title }}</b>
           <b>✅ Kernel Successfully Built</b>
@@ -189,6 +191,13 @@ jobs:
           <b>Action</b>: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         format: html
 
+    - name: Upload compile log on failure
+      if: ${{ failure() }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: compile.log
+        path: compile.log
+
     - name: Send Telegram notification for failure
       uses: appleboy/telegram-action@master
       env:
@@ -202,5 +211,11 @@ jobs:
         message: |
           <b>${{ steps.workspace.outputs.build_title }}</b>
           <b>❌ Kernel Build Failed</b>
-          Check: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          
+          <b>📱 Device</b>: Samsung Galaxy J5
+          <b>💾 Codename</b>: ${{ github.event.inputs.CODENAME }}
+          <b>🏷️ Branch</b>: ${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}
+          <b>🗓️ Date</b>: ${{ steps.workspace.outputs.current_date }}
+          
+          <b>Check log:</b> ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         format: html
