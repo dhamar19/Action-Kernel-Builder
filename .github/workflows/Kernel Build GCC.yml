@@ -86,7 +86,7 @@ jobs:
     - name: Prepare the build environment
       run: |
         sudo apt update -y && sudo apt upgrade -y
-        sudo apt install -y bc flex curl git zip ftp libncurses5 libssl-dev lftp zstd wget libfl-dev python2 python3 libarchive-tools gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+        sudo apt install -y bc flex curl git zip ftp libncurses5 libssl-dev lftp zstd wget libfl-dev python2 python3 libarchive-tools
         git clone https://github.com/Galaxy-MSM8916/android-prebuilts-gcc-linux-x86-arm-arm-eabi-7.2.git tool
         echo "tools-folder=$(pwd)/tool" >> $GITHUB_OUTPUT
       working-directory: ${{ steps.workspace.outputs.workspace-folder }}
@@ -187,6 +187,7 @@ jobs:
           <b>🗓️ Date</b>: ${{ steps.workspace.outputs.current_date }}
           
           Build by @dhamarar
+          
           <b>Source</b>: ${{ github.event.inputs.KERNEL_SOURCE }}
           <b>Action</b>: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         format: html
@@ -211,11 +212,5 @@ jobs:
         message: |
           <b>${{ steps.workspace.outputs.build_title }}</b>
           <b>❌ Kernel Build Failed</b>
-          
-          <b>📱 Device</b>: Samsung Galaxy J5
-          <b>💾 Codename</b>: ${{ github.event.inputs.CODENAME }}
-          <b>🏷️ Branch</b>: ${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}
-          <b>🗓️ Date</b>: ${{ steps.workspace.outputs.current_date }}
-          
-          <b>Check log:</b> ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          <b>Check:</b> ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} for more info
         format: html
