@@ -1,4 +1,4 @@
-name: Kernel Build 2
+name: Kernel Build CLANG
 
 on:
   workflow_dispatch:
@@ -13,7 +13,7 @@ on:
         required: true
       KERNEL_SOURCE:
         description: 'Kernel Source'
-        default: https://github.com/Dhamararf/android_kernel_mediatek_mt6765g.git
+        default: https://github.com/dhamar19/niigo_kernel_xiaomi_blossom.git
         required: true
       KERNEL_SOURCE_BRANCH:
         description: 'Kernel Source Branch'
@@ -23,11 +23,11 @@ on:
         required: true
       ANYKERNEL_URL:
         description: 'AnyKernel Url'
-        default: https://github.com/Dhamararf/AnyKernel3.git
+        default: https://github.com/dhamar19/AnyKernel3.git
         required: false
       ANYKERNEL_BRANCH:
         description: 'AnyKernel Branch (defaults to codename)'
-        default: master
+        default: blossom
         required: true
       ENABLE_KERNELSU:
         description: 'KernelSU'
@@ -75,14 +75,11 @@ jobs:
         disable_web_page_preview: true
         message: |
           <b>${{ github.event.inputs.BUILD_TITLE }}</b>
-          <b>⚒️Kernel Build Start⚒️</b>
+          <b>🔥Kernel Build Start...</b>
           
           <b>📱 Device</b>: Xiaomi Redmi 9C
-          <b>💾 Codename</b>: ${{ github.event.inputs.CODENAME }}
           <b>🏷️ Branch</b>: ${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}
           <b>🗓️ Date</b>: ${{ steps.workspace.outputs.current_date }}
-          
-          Build by @dhamarar
           
           <b>Action</b>: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         format: html
@@ -90,7 +87,7 @@ jobs:
     - name: Prepare the build environment
       run: |
         sudo apt update -y && sudo apt upgrade -y && sudo apt-get install -y bc flex curl git zip ftp libncurses5 libssl-dev lftp zstd wget libfl-dev python2 python3 libarchive-tools gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-        curl -LSs "https://raw.githubusercontent.com/rsuntk/toolchains/refs/heads/README/clone.sh" | bash -s clang-11
+        mkdir clang && curl  https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/20052113d2a5552cfff78ac7b21fd7953cc1c592/clang-r563880.tar.gz -RLO && tar -C clang/ -xf clang-*.tar.gz
         echo "tools-folder=$(pwd)" >> $GITHUB_OUTPUT
       working-directory: ${{ steps.workspace.outputs.workspace-folder }}
       id: tools
@@ -111,13 +108,13 @@ jobs:
         if [ -d "drivers/kernelsu" ]; then
           rm -rf "drivers/kernelsu"
         fi
-        curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU-Ultra/main/kernel/setup.sh" | bash -s susfs-dev
+        curl -LSs "https://raw.githubusercontent.com/rsuntk/KernelSU/main/kernel/setup.sh" | bash -s staging/susfs-main
       working-directory: ${{ steps.kernel.outputs.kernel-folder }}
 
     - name: Building kernel
       run: |
         set -e
-        export CLANGDIR="${{ steps.tools.outputs.tools-folder }}/clang-11"
+        export CLANGDIR="${{ steps.tools.outputs.tools-folder }}/clang"
         rm -f ${{ steps.kernel.outputs.kernel-folder }}/out/compile.log
         mkdir -p ${{ steps.kernel.outputs.kernel-folder }}/out
 
@@ -176,7 +173,7 @@ jobs:
           echo "Warning: Don't forget about dtb."
         fi
 
-        name=AnyKernel3-FulmenKernel-${{ github.event.inputs.CODENAME }}${{ fromJSON('["", "-KSU"]')[fromJSON(github.event.inputs.ENABLE_KERNELSU)] }}-$(date +%Y%m%d).zip
+        name=AnyKernel3-Fulmen-${{ github.event.inputs.CODENAME }}${{ fromJSON('["", "-KSU"]')[fromJSON(github.event.inputs.ENABLE_KERNELSU)] }}-$(date +%Y%m%d).zip
         cd AnyKernel3
         zip -q -r $name *
         mv $name ../
@@ -236,5 +233,5 @@ jobs:
           <b>${{ steps.workspace.outputs.build_title }}</b>
           <b>❌ Failed building kernel</b>, check ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} for more info.
           
-          <b>KernelSU</b>: ${{ steps.workspace.outputs.kernelsu }}
+          <b>☯️ KernelSU</b>: ${{ steps.workspace.outputs.kernelsu }}
         format: html
