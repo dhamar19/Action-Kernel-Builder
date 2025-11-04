@@ -101,7 +101,7 @@ jobs:
         message: |
           <b>🔥Kernel Build Start...</b>
           
-          <b>📱 DEVICE</b>: ${{ github.event.inputs.DEVICE }}
+          <b>📱 Device</b>: ${{ github.event.inputs.DEVICE }}
           <b>🏷️ Branch</b>: ${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}
           
           <b>Action</b>: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
@@ -142,7 +142,7 @@ jobs:
          CROSS_COMPILE_ARM32=arm-linux-gnueabi-
         }
 
-        fulmen 2>&1 | tee -a ${{ steps.kernel.outputs.kernel-folder }}/out/compile.log
+        fulmen 2>&1 | tee ${{ steps.kernel.outputs.kernel-folder }}/out/compile.log
         cp ${{ steps.kernel.outputs.kernel-folder }}/out/compile.log $GITHUB_WORKSPACE/
         echo "elapsed_time=$(echo "$(date +%s)"-"${{ steps.workspace.outputs.start_time }}" | bc)" >> $GITHUB_OUTPUT
       working-directory: ${{ steps.kernel.outputs.kernel-folder }}
@@ -213,7 +213,7 @@ jobs:
         document: ${{ steps.kernel.outputs.kernel-folder }}/out/arch/arm64/boot/${{ steps.anykernel.outputs.zipname }}
         message: |
           <b>✅ Kernel Successfully Build</b>
-          <b>📱 DEVICE</b>: ${{ github.event.inputs.DEVICE }}
+          <b>📱 Device</b>: ${{ github.event.inputs.DEVICE }}
           <b>🏷️ Branch</b>: ${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}
           <b>⚙️ Compiler</b>: ${{ env.CLANG_VERSION }}
           <b>🗒️ Last Commit</b>: ${{ env.LAST_COMMIT }}
@@ -236,7 +236,5 @@ jobs:
         document: ${{ steps.kernel.outputs.kernel-folder }}/out/compile.log
         message: |
           <b>Kernel Build</b>
-          <b>❌ Failed building kernel</b>, check ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} for more info.
-          
-          <b>☯️ KernelSU</b>: ${{ steps.workspace.outputs.kernelsu }}
+          <b>❌ Failed building kernel</b>, check ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} for more info.          
         format: html
