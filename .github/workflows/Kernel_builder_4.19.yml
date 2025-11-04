@@ -71,23 +71,6 @@ jobs:
       working-directory: ${{ steps.workspace.outputs.workspace-folder }}
       id: tools
 
-    - name: Send Telegram notification for start build
-      uses: appleboy/telegram-action@master
-      env:
-        TELEGRAM_TO: ${{ secrets.TELEGRAM_TO }}
-      with:
-        to: ${{ secrets.TELEGRAM_TO }}
-        token: ${{ secrets.TELEGRAM_TOKEN }}
-        disable_web_page_preview: true
-        message: |
-          <b>🔥Kernel Build Start...</b>
-          
-          <b>📱 Device</b>: ${{ github.event.inputs.DEVICE }}
-          <b>🏷️ Branch</b>: ${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}
-          
-          <b>Action</b>: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        format: html
-
     - name: Clone kernel source
       run: |
         git clone --depth=1 ${{ github.event.inputs.KERNEL_SOURCE }} -b ${{ github.event.inputs.KERNEL_SOURCE_BRANCH }} kernel_tree
@@ -107,63 +90,57 @@ jobs:
         eval ${{ github.event.inputs.KERNELSU_URL }}
       working-directory: ${{ steps.kernel.outputs.kernel-folder }}
 
+    - name: Send Telegram notification for start build
+      uses: appleboy/telegram-action@master
+      env:
+        TELEGRAM_TO: ${{ secrets.TELEGRAM_TO }}
+      with:
+        to: ${{ secrets.TELEGRAM_TO }}
+        token: ${{ secrets.TELEGRAM_TOKEN }}
+        disable_web_page_preview: true
+        message: |
+          <b>🔥Kernel Build Start...</b>
+          
+          <b>📱 Device</b>: ${{ github.event.inputs.DEVICE }}
+          <b>🏷️ Branch</b>: ${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}
+          
+          <b>Action</b>: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        format: html
+
     - name: Building kernel
       run: |
-        set -euo pipefail
+        set -e
         export CLANGDIR="${{ steps.tools.outputs.tools-folder }}/clang"
-        rm -f "${{ steps.kernel.outputs.kernel-folder }}/out/compile.log"
-        mkdir -p "${{ steps.kernel.outputs.kernel-folder }}/out"
+        rm -f ${{ steps.kernel.outputs.kernel-folder }}/out/compile.log
+        mkdir -p ${{ steps.kernel.outputs.kernel-folder }}/out
 
         export KBUILD_BUILD_USER="builder"
         export KBUILD_BUILD_HOST="dhamarar"
         export USE_CCACHE=1
         export PATH="$CLANGDIR/bin:$PATH"
 
-        # Clean once (separate from main build)
         make clean && make mrproper
-
-        # Prepare defconfig
         make O=out ARCH=arm64 ${{ github.event.inputs.DEFCONFIG }}_defconfig
 
-        # Build kernel directly (no function, no plain pipe) and capture full output
-        # Use process substitution so make runs in same shell and output is not duplicated
         make -j$(nproc --all) O=out LLVM=1 LLVM_IAS=1 \
-          ARCH=arm64 \
-          CC=clang \
-          LD=ld.lld \
-          AR=llvm-ar \
-          AS=llvm-as \
-          NM=llvm-nm \
-          STRIP=llvm-strip \
-          OBJCOPY=llvm-objcopy \
-          OBJDUMP=llvm-objdump \
-          READELF=llvm-readelf \
-          HOSTCC=clang \
-          HOSTCXX=clang++ \
-          HOSTAR=llvm-ar \
-          HOSTLD=ld.lld \
-          CROSS_COMPILE=aarch64-linux-gnu- \
-          CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
-          V=0 \
-          > >("${{ steps.kernel.outputs.kernel-folder }}/out/compile_pipe.sh") 2>&1 || true
-
-        # The above writes output to a temporary process substitution script path; move to actual log
-        # (This approach avoids duplicated output when piping directly to tee.)
-        # If the process substitution file doesn't exist, fallback to direct tee.
-        if [ -f "${{ steps.kernel.outputs.kernel-folder }}/out/compile_pipe.sh" ]; then
-          mv "${{ steps.kernel.outputs.kernel-folder }}/out/compile_pipe.sh" "${{ steps.kernel.outputs.kernel-folder }}/out/compile.log" || true
-        else
-          # fallback: capture output by re-running with tee (this should rarely happen)
-          make -j1 O=out LLVM=1 LLVM_IAS=1 ARCH=arm64 CC=clang V=0 2>&1 | tee "${{ steps.kernel.outputs.kernel-folder }}/out/compile.log" || true
-        fi
-
-        # Ensure compile.log exists and copy to workspace for artifact upload
-        if [ ! -f "${{ steps.kernel.outputs.kernel-folder }}/out/compile.log" ]; then
-          echo "No compile.log produced, creating placeholder" > "${{ steps.kernel.outputs.kernel-folder }}/out/compile.log"
-        fi
-        cp "${{ steps.kernel.outputs.kernel-folder }}/out/compile.log" "$GITHUB_WORKSPACE/"
-
-        echo "elapsed_time=$(echo \"$(date +%s)\"-\"${{ steps.workspace.outputs.start_time }}\" | bc)" >> $GITHUB_OUTPUT
+        ARCH=arm64 \
+        CC=clang \
+        LD=ld.lld \
+        AR=llvm-ar \
+        AS=llvm-as \
+        NM=llvm-nm \
+        STRIP=llvm-strip \
+        OBJCOPY=llvm-objcopy \
+        OBJDUMP=llvm-objdump \
+        READELF=llvm-readelf \
+        HOSTCC=clang \
+        HOSTCXX=clang++ \
+        HOSTAR=llvm-ar \
+        HOSTLD=ld.lld \
+        CROSS_COMPILE=aarch64-linux-gnu- \
+        CROSS_COMPILE_ARM32=arm-linux-gnueabi- |& tee -a ${{ steps.kernel.outputs.kernel-folder }}/out/compile.log
+        cp ${{ steps.kernel.outputs.kernel-folder }}/out/compile.log $GITHUB_WORKSPACE/
+        echo "elapsed_time=$(echo "$(date +%s)"-"${{ steps.workspace.outputs.start_time }}" | bc)" >> $GITHUB_OUTPUT
       working-directory: ${{ steps.kernel.outputs.kernel-folder }}
       id: build
 
@@ -254,5 +231,5 @@ jobs:
         disable_web_page_preview: true
         document: ${{ steps.kernel.outputs.kernel-folder }}/out/compile.log
         message: |
-          <b>❌ Failed building kernel</b>, check ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} for more info.          
+          <b>❌ Failed building kernel</b>, check ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} for more info.         
         format: html
