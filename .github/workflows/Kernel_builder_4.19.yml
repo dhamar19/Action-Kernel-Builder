@@ -1,14 +1,10 @@
-name: Kernel Build CLANG
+name: Kernel Build 4.19
 
 on:
   workflow_dispatch:
     inputs:
-      BUILD_TITLE:
-        description: 'Custom Build Title'
-        default: Fulmen Kernel Build
-        required: false
-      CODENAME:
-        description: 'Device codename'
+      DEVICE:
+        description: 'Device'
         default: Blossom
         required: true
       KERNEL_SOURCE:
@@ -26,13 +22,17 @@ on:
         default: https://github.com/dhamar19/AnyKernel3.git
         required: false
       ANYKERNEL_BRANCH:
-        description: 'AnyKernel Branch (defaults to codename)'
+        description: 'AnyKernel Branch'
         default: blossom
         required: true
       ENABLE_KERNELSU:
         description: 'KernelSU'
         type: boolean
         default: false
+      KERNELSU_URL:
+        description: 'Full KernelSU URL'
+        required: false
+        default: curl -LSs "https://raw.githubusercontent.com/rsuntk/KernelSU/main/kernel/setup.sh" | bash -s main
 
 jobs:
   build:
@@ -45,49 +45,28 @@ jobs:
     - name: Display User Inputs
       run: |
         echo "::group::User Environment Variables"
-        echo "Custom Build Title: ${{ github.event.inputs.BUILD_TITLE }}"
-        echo "Codename: ${{ github.event.inputs.CODENAME }}"
+        echo "DEVICE: ${{ github.event.inputs.DEVICE }}"
         echo "Kernel Source: ${{ github.event.inputs.KERNEL_SOURCE }}/tree/${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}"
         echo "Kernel Defconfig: ${{ github.event.inputs.DEFCONFIG }}"
         echo "AnyKernel Url: ${{ github.event.inputs.ANYKERNEL_URL }}/tree/${{ github.event.inputs.ANYKERNEL_BRANCH }}"
         echo "KernelSU: ${{ fromJSON('["No", "Yes"]')[fromJSON(github.event.inputs.ENABLE_KERNELSU)] }}"
+        echo "Full KernelSU URL: ${{ github.event.inputs.KERNELSU_URL}}"
         echo "::endgroup::"
 
     - name: Initialize workspace
       run: |
         mkdir workspace
         cd workspace
-
-        echo "current_date=$(date +'%d %B %Y')" >> $GITHUB_OUTPUT
         echo "workspace-folder=$(pwd)" >> $GITHUB_OUTPUT
         echo "start_time=$(date +%s)" >> $GITHUB_OUTPUT
         echo "kernelsu=${{ fromJSON('["No", "Yes"]')[fromJSON(github.event.inputs.ENABLE_KERNELSU)] }}" >> $GITHUB_OUTPUT
-        echo "build_title=${{ github.event.inputs.BUILD_TITLE || github.event.inputs.CODENAME }}" >> $GITHUB_OUTPUT
       id: workspace
-
-    - name: Send Telegram notification for start build
-      uses: appleboy/telegram-action@master
-      env:
-        TELEGRAM_TO: ${{ secrets.TELEGRAM_TO }}
-      with:
-        to: ${{ secrets.TELEGRAM_TO }}
-        token: ${{ secrets.TELEGRAM_TOKEN }}
-        disable_web_page_preview: true
-        message: |
-          <b>${{ github.event.inputs.BUILD_TITLE }}</b>
-          <b>🔥Kernel Build Start...</b>
-          
-          <b>📱 Device</b>: Xiaomi Redmi 9C
-          <b>🏷️ Branch</b>: ${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}
-          <b>🗓️ Date</b>: ${{ steps.workspace.outputs.current_date }}
-          
-          <b>Action</b>: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        format: html
-
+      
     - name: Prepare the build environment
       run: |
-        sudo apt update -y && sudo apt upgrade -y && sudo apt-get install -y bc flex curl git zip ftp libncurses5 libssl-dev lftp zstd wget libfl-dev python2 python3 libarchive-tools gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-        mkdir clang && curl  https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/20052113d2a5552cfff78ac7b21fd7953cc1c592/clang-r563880.tar.gz -RLO && tar -C clang/ -xf clang-*.tar.gz
+        sudo apt update -y && sudo apt upgrade -y
+        sudo apt-get install -y bc flex curl git zip ftp libncurses5 libssl-dev lftp zstd wget libfl-dev python3 libarchive-tools gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+        mkdir clang && curl https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/508ea7dd0d8f681904d0422e98af9613aaabf180/clang-r574158.tar.gz -RLO && tar -C clang/ -xf clang-*.tar.gz
         echo "tools-folder=$(pwd)" >> $GITHUB_OUTPUT
       working-directory: ${{ steps.workspace.outputs.workspace-folder }}
       id: tools
@@ -108,8 +87,25 @@ jobs:
         if [ -d "drivers/kernelsu" ]; then
           rm -rf "drivers/kernelsu"
         fi
-        curl -LSs "https://raw.githubusercontent.com/rsuntk/KernelSU/main/kernel/setup.sh" | bash -s staging/susfs-main
+        eval ${{ github.event.inputs.KERNELSU_URL }}
       working-directory: ${{ steps.kernel.outputs.kernel-folder }}
+
+    - name: Send Telegram notification for start build
+      uses: appleboy/telegram-action@master
+      env:
+        TELEGRAM_TO: ${{ secrets.TELEGRAM_TO }}
+      with:
+        to: ${{ secrets.TELEGRAM_TO }}
+        token: ${{ secrets.TELEGRAM_TOKEN }}
+        disable_web_page_preview: true
+        message: |
+          <b>🔥Kernel Build Start...</b>
+          
+          <b>📱 DEVICE</b>: ${{ github.event.inputs.DEVICE }}
+          <b>🏷️ Branch</b>: ${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}
+          
+          <b>Action</b>: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        format: html
 
     - name: Building kernel
       run: |
@@ -118,8 +114,8 @@ jobs:
         rm -f ${{ steps.kernel.outputs.kernel-folder }}/out/compile.log
         mkdir -p ${{ steps.kernel.outputs.kernel-folder }}/out
 
-        export KBUILD_BUILD_USER="DhamarAr"
-        export KBUILD_BUILD_HOST="Ordinary_Being"
+        export KBUILD_BUILD_USER="builder"
+        export KBUILD_BUILD_HOST="dhamarar"
         export USE_CCACHE=1
         export PATH="$CLANGDIR/bin:$PATH"
 
@@ -163,34 +159,48 @@ jobs:
         fi
         git clone --recursive --depth=1 ${{ github.event.inputs.ANYKERNEL_URL }} -b $anykernel_branch AnyKernel3
 
-        if [ ! -f "Image.gz" ]; then
-          echo "Error: Tidak menemukan Image.gz atau Image!"
+        if [ -f "Image.gz-dtb" ]; then
+          cp -f Image.gz-dtb AnyKernel3/Image.gz-dtb
+        elif [ -f "Image.gz" ]; then
+          cp -f Image.gz AnyKernel3/Image.gz
+        elif [ -f "Image" ]; then
+          cp -f Image AnyKernel3/Image
+        else
+          echo "Error: Tidak menemukan Image atau Image.gz!"
           exit 1
         fi
 
-        if [ -e "Image.gz" ]; then
-          cp -f Image.gz AnyKernel3
-          echo "Warning: Don't forget about dtb."
-        fi
-
-        name=AnyKernel3-Fulmen-${{ github.event.inputs.CODENAME }}${{ fromJSON('["", "-KSU"]')[fromJSON(github.event.inputs.ENABLE_KERNELSU)] }}-$(date +%Y%m%d).zip
+        name=AnyKernel3-Fulmen-${{ github.event.inputs.DEVICE }}${{ fromJSON('["", "-KSU"]')[fromJSON(github.event.inputs.ENABLE_KERNELSU)] }}-$(date +%Y%m%d).zip
         cd AnyKernel3
         zip -q -r $name *
         mv $name ../
         echo "zipname=$name" >> $GITHUB_OUTPUT
       working-directory: ${{ steps.kernel.outputs.kernel-folder }}/out/arch/arm64/boot/
       id: anykernel
-
-    - name: Check the output directory before uploading
+      
+    - name: Get build info
       run: |
+        cd ${{ steps.kernel.outputs.kernel-folder }}
+        echo "CLANG_VERSION=$(${{
+          steps.tools.outputs.tools-folder
+        }}/clang/bin/clang --version | head -n1)" >> $GITHUB_ENV
+        echo "LAST_COMMIT=$(git log -1 --pretty=format:'%h - %s')" >> $GITHUB_ENV
         ls -al ${{ steps.kernel.outputs.kernel-folder }}/out/arch/arm64/boot/
 
-    - uses: actions/upload-artifact@v4
-      if: ${{ success() }}
+    - name: Upload Kernel
+      if: ${{ success() && steps.anykernel.outputs.zipname != '' }} 
+      uses: actions/upload-artifact@v4
       with:
-        name: Image.gz
-        path: ${{ steps.kernel.outputs.kernel-folder }}/out/arch/arm64/boot/Image.gz
+        name: ${{ steps.anykernel.outputs.zipname }}
+        path: ${{ steps.kernel.outputs.kernel-folder }}/out/arch/arm64/boot/${{ steps.anykernel.outputs.zipname }}
 
+    - name: Upload Build Log
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: compile.log
+        path: ${{ steps.kernel.outputs.kernel-folder }}/out/compile.log
+        
     - name: Send Telegram notification for success
       uses: appleboy/telegram-action@master
       env:
@@ -202,18 +212,13 @@ jobs:
         disable_web_page_preview: true
         document: ${{ steps.kernel.outputs.kernel-folder }}/out/arch/arm64/boot/${{ steps.anykernel.outputs.zipname }}
         message: |
-          <b>${{ steps.workspace.outputs.build_title }}</b>
           <b>✅ Kernel Successfully Build</b>
-          
-          <b>📱 Device</b>: Xiaomi Redmi 9C 
-          <b>💾 Codename</b>: ${{ github.event.inputs.CODENAME }}
+          <b>📱 DEVICE</b>: ${{ github.event.inputs.DEVICE }}
           <b>🏷️ Branch</b>: ${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}
-          <b>📦 Zip Name</b>: ${{ steps.anykernel.outputs.zipname }}
-          <b>⏳ Build Time</b>: ${{ steps.build.outputs.elapsed_time }} seconds.
-          <b>🗓️ Date</b>: ${{ steps.workspace.outputs.current_date }}
+          <b>⚙️ Compiler</b>: ${{ env.CLANG_VERSION }}
+          <b>🗒️ Last Commit</b>: ${{ env.LAST_COMMIT }}
           <b>☯️ KernelSU</b>: ${{ steps.workspace.outputs.kernelsu }}
-          
-          Build by @dhamarar
+          <b>⏳ Build Time</b>: ${{ steps.build.outputs.elapsed_time }} seconds.
           
           <b>Kernel Source</b>: ${{ github.event.inputs.KERNEL_SOURCE }}
           <b>Action</b>: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
@@ -228,9 +233,9 @@ jobs:
         to: ${{ secrets.TELEGRAM_TO }}
         token: ${{ secrets.TELEGRAM_TOKEN }}
         disable_web_page_preview: true
-        document: compile.log
+        document: ${{ steps.kernel.outputs.kernel-folder }}/out/compile.log
         message: |
-          <b>${{ steps.workspace.outputs.build_title }}</b>
+          <b>Kernel Build</b>
           <b>❌ Failed building kernel</b>, check ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} for more info.
           
           <b>☯️ KernelSU</b>: ${{ steps.workspace.outputs.kernelsu }}
