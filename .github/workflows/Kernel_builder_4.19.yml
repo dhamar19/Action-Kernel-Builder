@@ -66,7 +66,7 @@ jobs:
       run: |
         sudo apt update -y && sudo apt upgrade -y
         sudo apt-get install -y bc flex curl git zip ftp libncurses5 libssl-dev lftp zstd wget libfl-dev python3 libarchive-tools gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-        mkdir clang && curl https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/508ea7dd0d8f681904d0422e98af9613aaabf180/clang-r574158.tar.gz -RLO && tar -C clang/ -xf clang-*.tar.gz
+        mkdir clang && curl -L -o clang.tar.gz "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/508ea7dd0d8f681904d0422e98af9613aaabf180/clang-r574158.tar.gz" && tar -C clang/ -xf clang.tar.gz
         echo "tools-folder=$(pwd)" >> $GITHUB_OUTPUT
       working-directory: ${{ steps.workspace.outputs.workspace-folder }}
       id: tools
@@ -107,12 +107,13 @@ jobs:
           <b>Action</b>: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         format: html
 
+    # ✅ FIXED BUILD STEP (no duplicate log)
     - name: Building kernel
       run: |
         set -e
         export CLANGDIR="${{ steps.tools.outputs.tools-folder }}/clang"
-        rm -f ${{ steps.kernel.outputs.kernel-folder }}/out/compile.log
-        mkdir -p ${{ steps.kernel.outputs.kernel-folder }}/out
+        mkdir -p out
+        rm -f out/compile.log
 
         export KBUILD_BUILD_USER="builder"
         export KBUILD_BUILD_HOST="dhamarar"
@@ -122,25 +123,28 @@ jobs:
         make clean && make mrproper
         make O=out ARCH=arm64 ${{ github.event.inputs.DEFCONFIG }}_defconfig
 
-        make -j$(nproc --all) O=out LLVM=1 LLVM_IAS=1 \
-        ARCH=arm64 \
-        CC=clang \
-        LD=ld.lld \
-        AR=llvm-ar \
-        AS=llvm-as \
-        NM=llvm-nm \
-        STRIP=llvm-strip \
-        OBJCOPY=llvm-objcopy \
-        OBJDUMP=llvm-objdump \
-        READELF=llvm-readelf \
-        HOSTCC=clang \
-        HOSTCXX=clang++ \
-        HOSTAR=llvm-ar \
-        HOSTLD=ld.lld \
-        CROSS_COMPILE=aarch64-linux-gnu- \
-        CROSS_COMPILE_ARM32=arm-linux-gnueabi- |& tee -a ${{ steps.kernel.outputs.kernel-folder }}/out/compile.log
-        cp ${{ steps.kernel.outputs.kernel-folder }}/out/compile.log $GITHUB_WORKSPACE/
-        echo "elapsed_time=$(echo "$(date +%s)"-"${{ steps.workspace.outputs.start_time }}" | bc)" >> $GITHUB_OUTPUT
+        {
+          make -j$(nproc --all) O=out LLVM=1 LLVM_IAS=1 \
+            ARCH=arm64 \
+            CC=clang \
+            LD=ld.lld \
+            AR=llvm-ar \
+            AS=llvm-as \
+            NM=llvm-nm \
+            STRIP=llvm-strip \
+            OBJCOPY=llvm-objcopy \
+            OBJDUMP=llvm-objdump \
+            READELF=llvm-readelf \
+            HOSTCC=clang \
+            HOSTCXX=clang++ \
+            HOSTAR=llvm-ar \
+            HOSTLD=ld.lld \
+            CROSS_COMPILE=aarch64-linux-gnu- \
+            CROSS_COMPILE_ARM32=arm-linux-gnueabi-
+        } > >(tee out/compile.log) 2>&1
+
+        cp out/compile.log $GITHUB_WORKSPACE/
+        echo "elapsed_time=$(( $(date +%s) - ${{ steps.workspace.outputs.start_time }} ))" >> $GITHUB_OUTPUT
       working-directory: ${{ steps.kernel.outputs.kernel-folder }}
       id: build
 
@@ -177,9 +181,7 @@ jobs:
     - name: Get build info
       run: |
         cd ${{ steps.kernel.outputs.kernel-folder }}
-        echo "CLANG_VERSION=$(${{
-          steps.tools.outputs.tools-folder
-        }}/clang/bin/clang --version | head -n1)" >> $GITHUB_ENV
+        echo "CLANG_VERSION=$(${steps.tools.outputs.tools-folder}/clang/bin/clang --version | head -n1)" >> $GITHUB_ENV
         echo "LAST_COMMIT=$(git log -1 --pretty=format:'%h - %s')" >> $GITHUB_ENV
         ls -al ${{ steps.kernel.outputs.kernel-folder }}/out/arch/arm64/boot/
 
@@ -188,7 +190,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ${{ steps.anykernel.outputs.zipname }}
-        path: ${{ steps.kernel.outputs.kernel-folder }}/out/arch/arm64/boot/${{ steps.anykernel.outputs.zipname }}
+        path: ${{ steps.kernel.outputs.kernel-folder }}/out/arch/arch64/boot/${{ steps.anykernel.outputs.zipname }}
 
     - name: Upload Build Log
       if: always()
