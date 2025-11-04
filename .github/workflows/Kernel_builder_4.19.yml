@@ -71,6 +71,23 @@ jobs:
       working-directory: ${{ steps.workspace.outputs.workspace-folder }}
       id: tools
 
+    - name: Send Telegram notification for start build
+      uses: appleboy/telegram-action@master
+      env:
+        TELEGRAM_TO: ${{ secrets.TELEGRAM_TO }}
+      with:
+        to: ${{ secrets.TELEGRAM_TO }}
+        token: ${{ secrets.TELEGRAM_TOKEN }}
+        disable_web_page_preview: true
+        message: |
+          <b>🔥Kernel Build Start...</b>
+          
+          <b>📱 Device</b>: ${{ github.event.inputs.DEVICE }}
+          <b>🏷️ Branch</b>: ${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}
+          
+          <b>Action</b>: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        format: html
+
     - name: Clone kernel source
       run: |
         git clone --depth=1 ${{ github.event.inputs.KERNEL_SOURCE }} -b ${{ github.event.inputs.KERNEL_SOURCE_BRANCH }} kernel_tree
@@ -89,23 +106,6 @@ jobs:
         fi
         eval ${{ github.event.inputs.KERNELSU_URL }}
       working-directory: ${{ steps.kernel.outputs.kernel-folder }}
-
-    - name: Send Telegram notification for start build
-      uses: appleboy/telegram-action@master
-      env:
-        TELEGRAM_TO: ${{ secrets.TELEGRAM_TO }}
-      with:
-        to: ${{ secrets.TELEGRAM_TO }}
-        token: ${{ secrets.TELEGRAM_TOKEN }}
-        disable_web_page_preview: true
-        message: |
-          <b>🔥Kernel Build Start...</b>
-          
-          <b>📱 Device</b>: ${{ github.event.inputs.DEVICE }}
-          <b>🏷️ Branch</b>: ${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}
-          
-          <b>Action</b>: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        format: html
 
     - name: Building kernel
       run: |
