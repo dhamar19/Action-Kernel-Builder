@@ -1,4 +1,4 @@
-name: Kernel Build 4.19
+name: Kernel Builder
 
 on:
   workflow_dispatch:
