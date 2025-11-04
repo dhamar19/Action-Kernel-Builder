@@ -139,7 +139,8 @@ jobs:
          HOSTAR=llvm-ar \
          HOSTLD=ld.lld \
          CROSS_COMPILE=aarch64-linux-gnu- \
-         CROSS_COMPILE_ARM32=arm-linux-gnueabi-
+         CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
+         V=0
         }
 
         fulmen 2>&1 | tee ${{ steps.kernel.outputs.kernel-folder }}/out/compile.log
