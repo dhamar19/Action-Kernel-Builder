@@ -118,7 +118,9 @@ jobs:
         export KBUILD_BUILD_HOST="dhamarar"
         export USE_CCACHE=1
         export PATH="$CLANGDIR/bin:$PATH"
-
+        
+        export KCFLAGS="$KCFLAGS -Wno-default-const-init-field-unsafe"
+        
         make clean && make mrproper
         make O=out ARCH=arm64 ${{ github.event.inputs.DEFCONFIG }}_defconfig
 
@@ -138,9 +140,9 @@ jobs:
          HOSTAR=llvm-ar \
          HOSTLD=ld.lld \
          CROSS_COMPILE=aarch64-linux-gnu- \
-         CROSS_COMPILE_ARM32=arm-linux-gnueabi-
-
-        2>&1 | tee -a ${{ steps.kernel.outputs.kernel-folder }}/out/compile.log
+         CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
+         2>&1 | tee -a ${{ steps.kernel.outputs.kernel-folder }}/out/compile.log
+         
         cp ${{ steps.kernel.outputs.kernel-folder }}/out/compile.log $GITHUB_WORKSPACE/
         echo "elapsed_time=$(echo "$(date +%s)"-"${{ steps.workspace.outputs.start_time }}" | bc)" >> $GITHUB_OUTPUT
       working-directory: ${{ steps.kernel.outputs.kernel-folder }}
@@ -189,14 +191,19 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ${{ steps.anykernel.outputs.zipname }}
-        path: ${{ steps.kernel.outputs.kernel-folder }}/out/arch/arm64/boot/${{ steps.anykernel.outputs.zipname }}
+        path: |
+          ${{ steps.kernel.outputs.kernel-folder }}/out/arch/arm64/boot/${{ steps.anykernel.outputs.zipname }}
+          ${{ steps.kernel.outputs.kernel-folder }}/out/${{ steps.anykernel.outputs.zipname }}
+          ${{ steps.kernel.outputs.kernel-folder }}/**/${{ steps.anykernel.outputs.zipname }}
 
     - name: Upload Build Log
       if: always()
       uses: actions/upload-artifact@v4
       with:
         name: compile.log
-        path: ${{ steps.kernel.outputs.kernel-folder }}/out/compile.log
+        path: |
+          ${{ steps.kernel.outputs.kernel-folder }}/out/compile.log
+          $GITHUB_WORKSPACE/compile.log
         
     - name: Send Telegram notification for success
       uses: appleboy/telegram-action@master
