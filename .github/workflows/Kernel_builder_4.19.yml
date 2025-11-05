@@ -101,8 +101,8 @@ jobs:
         message: |
           <b>🔥Kernel Build Start...</b>
           
-          <b>📱 Device</b>: ${{ github.event.inputs.DEVICE }}
-          <b>🏷️ Branch</b>: ${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}
+          <b>📱 Device:</b> ${{ github.event.inputs.DEVICE }}
+          <b>🏷️ Branch:</b> ${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}
           
           <b>Action</b>: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         format: html
@@ -170,7 +170,7 @@ jobs:
           exit 1
         fi
 
-        name=AnyKernel3-Fulmen-${{ github.event.inputs.DEVICE }}${{ fromJSON('["", "-KSU"]')[fromJSON(github.event.inputs.ENABLE_KERNELSU)] }}-$(date +%Y%m%d).zip
+        name=AnyKernel3-Fulmen-${{ github.event.inputs.DEVICE }}${{ fromJSON('["", "-KSU"]')[fromJSON(github.event.inputs.ENABLE_KERNELSU)] }}-$(date +%Y%m%d-%H%M).zip
         cd AnyKernel3
         zip -q -r $name *
         mv $name ../
@@ -182,6 +182,7 @@ jobs:
       run: |
         cd ${{ steps.kernel.outputs.kernel-folder }}
         CLANG_PATH="${{ steps.tools.outputs.tools-folder }}/clang/bin/clang"
+        echo "KERNEL_VERSION=$(make kernelversion)" >> $GITHUB_ENV
         echo "CLANG_VERSION=$($CLANG_PATH --version | head -n1)" >> $GITHUB_ENV
         echo "LAST_COMMIT=$(git log -1 --pretty=format:'%h - %s')" >> $GITHUB_ENV
         ls -al ${{ steps.kernel.outputs.kernel-folder }}/out/arch/arm64/boot/
@@ -204,6 +205,7 @@ jobs:
         path: |
           ${{ steps.kernel.outputs.kernel-folder }}/out/compile.log
           $GITHUB_WORKSPACE/compile.log
+        compression-level: 0
         
     - name: Send Telegram notification for success
       uses: appleboy/telegram-action@master
@@ -215,16 +217,16 @@ jobs:
         token: ${{ secrets.TELEGRAM_TOKEN }}
         disable_web_page_preview: true
         document: ${{ steps.kernel.outputs.kernel-folder }}/out/arch/arm64/boot/${{ steps.anykernel.outputs.zipname }}
-        message: |
+        caption: |
           <b>✅ Kernel Successfully Build</b>
-          <b>📱 Device</b>: ${{ github.event.inputs.DEVICE }}
-          <b>🏷️ Branch</b>: ${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}
-          <b>⚙️ Compiler</b>: ${{ env.CLANG_VERSION }}
-          <b>🗒️ Last Commit</b>: ${{ env.LAST_COMMIT }}
-          <b>☯️ KernelSU</b>: ${{ steps.workspace.outputs.kernelsu }}
-          <b>⏳ Build Time</b>: ${{ steps.build.outputs.elapsed_time }} seconds.
+          <b>📱 Device:</b> ${{ github.event.inputs.DEVICE }}
+          <b>🏷️ Branch:</b> ${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}
+          <b>🧬 Kernel Version:</b> ${{ env.KERNEL_VERSION }}
+          <b>🗒️ Last Commit:</b> ${{ env.LAST_COMMIT }}
+          <b>⚙️ Compiler:</b> ${{ env.CLANG_VERSION }}
+          <b>⏳ Build Time:</b> ${{ steps.build.outputs.elapsed_time }} seconds. 
           
-          <b>Kernel Source</b>: ${{ github.event.inputs.KERNEL_SOURCE }}
+          <b>Kernel Source</b>: ${{ github.event.inputs.KERNEL_SOURCE }}/tree/${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}
           <b>Action</b>: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         format: html
 
