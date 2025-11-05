@@ -119,6 +119,8 @@ jobs:
        export USE_CCACHE=1
        export PATH="$CLANGDIR/bin:$PATH"
 
+       export KCFLAGS="$KCFLAGS -Wno-default-const-init-field-unsafe"
+
        make clean && make mrproper
        make O=out ARCH=arm64 ${{ github.event.inputs.DEFCONFIG }}_defconfig
 
