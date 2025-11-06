@@ -58,7 +58,6 @@ jobs:
         mkdir workspace
         cd workspace
         echo "workspace-folder=$(pwd)" >> $GITHUB_OUTPUT
-        echo "start_time=$(date +%s)" >> $GITHUB_OUTPUT
         echo "kernelsu=${{ fromJSON('["No", "Yes"]')[fromJSON(github.event.inputs.ENABLE_KERNELSU)] }}" >> $GITHUB_OUTPUT
       id: workspace
       
@@ -102,10 +101,11 @@ jobs:
         export USE_CCACHE=1
         export PATH="$CLANGDIR/bin:$PATH"
 
+        export KCFLAGS="$KCFLAGS -Wno-default-const-init-field-unsafe"
+
         make clean && make mrproper
         make O=out ARCH=arm64 ${{ github.event.inputs.DEFCONFIG }}_defconfig
 
-        fulmen () {
          make -j$(nproc --all) O=out LLVM=1 LLVM_IAS=1 \
          ARCH=arm64 \
          CC=clang \
@@ -122,12 +122,10 @@ jobs:
          HOSTAR=llvm-ar \
          HOSTLD=ld.lld \
          CROSS_COMPILE=aarch64-linux-gnu- \
-         CROSS_COMPILE_ARM32=arm-linux-gnueabi-
-        }
-
-        fulmen 2>&1 | tee -a ${{ steps.kernel.outputs.kernel-folder }}/out/compile.log
+         CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
+         2>&1 | tee -a ${{ steps.kernel.outputs.kernel-folder }}/out/compile.log
+         
         cp ${{ steps.kernel.outputs.kernel-folder }}/out/compile.log $GITHUB_WORKSPACE/
-        echo "elapsed_time=$(echo "$(date +%s)"-"${{ steps.workspace.outputs.start_time }}" | bc)" >> $GITHUB_OUTPUT
       working-directory: ${{ steps.kernel.outputs.kernel-folder }}
       id: build
 
@@ -153,7 +151,7 @@ jobs:
           exit 1
         fi
 
-        name=AnyKernel3-Fulmen-${{ github.event.inputs.DEVICE }}${{ fromJSON('["", "-KSU"]')[fromJSON(github.event.inputs.ENABLE_KERNELSU)] }}-$(date +%Y%m%d).zip
+        name=Kernel-${{ github.event.inputs.DEVICE }}${{ fromJSON('["", "-KSU"]')[fromJSON(github.event.inputs.ENABLE_KERNELSU)] }}-$(date +%Y%m%d-%H%M).zip
         cd AnyKernel3
         zip -q -r $name *
         mv $name ../
@@ -166,11 +164,17 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ${{ steps.anykernel.outputs.zipname }}
-        path: ${{ steps.kernel.outputs.kernel-folder }}/out/arch/arm64/boot/${{ steps.anykernel.outputs.zipname }}
+        path: |
+          ${{ steps.kernel.outputs.kernel-folder }}/out/arch/arm64/boot/${{ steps.anykernel.outputs.zipname }}
+          ${{ steps.kernel.outputs.kernel-folder }}/out/${{ steps.anykernel.outputs.zipname }}
+          ${{ steps.kernel.outputs.kernel-folder }}/**/${{ steps.anykernel.outputs.zipname }}
 
     - name: Upload Build Log
       if: always()
       uses: actions/upload-artifact@v4
       with:
         name: compile.log
-        path: ${{ steps.kernel.outputs.kernel-folder }}/out/compile.log
+        path: |
+          ${{ steps.kernel.outputs.kernel-folder }}/out/compile.log
+          $GITHUB_WORKSPACE/compile.log
+        compression-level: 0
