@@ -216,8 +216,7 @@ jobs:
         to: ${{ secrets.TELEGRAM_TO }}
         token: ${{ secrets.TELEGRAM_TOKEN }}
         disable_web_page_preview: true
-        document: ${{ steps.kernel.outputs.kernel-folder }}/out/arch/arm64/boot/${{ steps.anykernel.outputs.zipname }}
-        caption: |
+        message: |
           <b>✅ Kernel Successfully Build</b>
           <b>📱 Device:</b> ${{ github.event.inputs.DEVICE }}
           <b>🏷️ Branch:</b> ${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}
@@ -228,6 +227,7 @@ jobs:
           
           <b>Kernel Source</b>: ${{ github.event.inputs.KERNEL_SOURCE }}/tree/${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}
           <b>Action</b>: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        document: ${{ steps.kernel.outputs.kernel-folder }}/out/arch/arm64/boot/${{ steps.anykernel.outputs.zipname }}
         format: html
 
     - name: Send Telegram notification for failure
