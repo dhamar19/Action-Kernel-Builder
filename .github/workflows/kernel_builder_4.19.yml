@@ -26,7 +26,7 @@ on:
         default: blossom
         required: true
       ENABLE_KERNELSU:
-        description: 'KernelSU'
+        description: 'KernelSU (required kprobes hook or manual hook!!!)'
         type: boolean
         default: false
       KERNELSU_URL:
